@@ -387,17 +387,15 @@ run_build() {
 }
 
 make_files() {
-	
-	if [[ $KEEPBACKUPS == "YES" ]]; then
-		for n in $(seq 4 -1 1)
-		{
+	if [ "$KEEPBACKUPS" = "YES" ]; then
+		for n in $(seq 4 -1 1); do
 			if [ -r $PRGNAM.info.$n ]; then
-				mv -f $PRGNAM.info.$n $PRGNAM.info.$[n+1]
+				mv -f $PRGNAM.info.$n $PRGNAM.info.$(($n+1))
 			fi
 			if [ -r slack-desc.$n ]; then
-				mv -f slack-desc.$n slack-desc.$[n+1]
+				mv -f slack-desc.$n slack-desc.$(($n+1))
 			fi
-		}
+		done
 		if [ -r $PRGNAM.info ]; then
 			mv -f $PRGNAM.info $PRGNAM.info.1
 		fi
@@ -409,26 +407,26 @@ make_files() {
 	cat $TEMPLATES/template.info > $PRGNAM.info
 	cat $TEMPLATES/slack-desc > slack-desc
 
-	blank="                                          "
-	blanklen=${#PRGNAM}
-	blank=${blank:1:blanklen}
-	sed -i "s%       |%${blank}|%" slack-desc
-	sed -i "s%appname%${PRGNAM}%g" slack-desc
-	sed -i "s%@PRGNAM@%${PRGNAM}%g" $PRGNAM.info
-	sed -i "s%@VERSION@%${VERSION}%g" $PRGNAM.info
-	sed -i "s%@NAME@%${NAME}%g" $PRGNAM.info
-	sed -i "s%@EMAIL@%${EMAIL}%g" $PRGNAM.info
+	blank=$(echo $PRGNAM | tr "$PRGNAM" " ")
+	sed -i "
+		s%       |%$blank|%
+		s%appname%$PRGNAM%g
+		" slack-desc
+	sed -i "
+		s%@PRGNAM@%$PRGNAM%g
+		s%@VERSION@%$VERSION%g
+		s%@NAME@%$NAME%g
+		s%@EMAIL@%$EMAIL%g
+		" $PRGNAM.info
 
-	MD5SUM=$(md5sum ${SRCNAM}-${VERSION}.${ARCHIVE} | cut -f1 -d' ')
+	MD5SUM=$(md5sum $SRCNAM-$VERSION.$ARCHIVE | cut -d' ' -f1)
 
 	printf "md5sum of archive:\t$MD5SUM\n"
 	
-	if [[ "$ARCH" = "i486" || "$ARCH" = "i686" ]]; then
-		sed -i "s%@md5sum@%$MD5SUM%" $PRGNAM.info
-		sed -i "s%@md5sum64@%%" $PRGNAM.info
+	if [ "$ARCH" = "i486" ] || [ "$ARCH" = "i686" ]; then
+		sed -i "s%@md5sum@%$MD5SUM%;s%@md5sum64@%%" $PRGNAM.info
 	elif [ "$ARCH" = "x86_64" ]; then
-		sed -i "s%@md5sum64@%$MD5SUM%" $PRGNAM.info
-		sed -i "s%@md5sum@%%" $PRGNAM.info
+		sed -i "s%@md5sum64@%$MD5SUM%;s%@md5sum@%%" $PRGNAM.info
 	fi
 	printf "Info built.\n"
 }
