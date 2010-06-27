@@ -1,0 +1,41 @@
+mkslack - a SlackBuild generator script
+(C) David Woodfall 2010
+
+This slackbuild generator uses templates stored in /usr/share/mkslack/templates
+and a config file /etc/mkslack/mkslack.conf which you must edit for name, 
+email, copyright etc.
+
+Idea for use:
+
+The initial slackbuild and info file are built by this script, and when
+a test build/install is done and working, the files should be tweaked by
+hand. Especially don't forget to fill in the rest of the details in the
+.info. One thing to point out is that mkslack will overwrite these files
+if run again unless you set KEEPBACKUPS="YES" in the conf (default).
+
+This is only a starter kit! You ARE expected to edit the created files
+by hand afterwards to remove unnecesary parts!
+
+Syntax:
+
+mkslack [options] <archive>
+
+Options:
+-h --help		Usage.
+-r --run		Run SlackBuild after creation. Got root?
+-i --install	Install the package after running.
+-l --list		Pipe archive contents to /usr/bin/most and exit.
+-v --version	Version of mkslack.
+
+The documents list in top level of source tree can be adjusted by command:
+DOCS="SomeFile" mkslack <archive>
+This will add 'SomeFile' to the list. You can also edit the DOCS list in
+this script. Any that it doesn't find will be removed from the list.
+
+Build can be specified by:
+BUILD=2 mkslack <archive>
+Otherwise it defaults to 1.
+
+ARCH can be specified by:
+ARCH=xxx mkslack <archive>
+It defaults to i486 the same as a regular SlackBuild.

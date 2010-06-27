@@ -1,0 +1,474 @@
+#!/bin/bash 
+
+# Build system for generating SlackBuild scripts
+
+# Copyright 2010  David Woodfall <info@davidwoodfall.co.uk>
+# All rights reserved.
+#
+# Redistribution and use of this script, with or without modification, is
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of this script must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR IMPLIED
+# WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+# EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+SCRIPTVERSION=3.0
+ARCH=${ARCH:-i486}
+BUILD=${BUILD:-1}
+CWD=$(pwd)
+PKGTMP=/tmp
+TEMPLATES=/usr/share/mkslack/templates
+CONFIG=/etc/mkslack/mkslack.conf
+DOCS=$(echo ${DOCS}" LICENSE README COPYRIGHT CREDITS HACKING TODO AUTHORS INSTALL CHANGELOG COPYING NEWS THANKS CHANGES MAINTAINERS CODING_STYLE VERSION ChangeLog Changelog Copyright CopyRight " | sed 's/^ //')
+
+
+UTAG=$TAG
+source $CONFIG
+TAG="_${UTAG:-$TAG}"
+TMP=${TAG/_/}
+
+version() {
+	printf "mkslack $SCRIPTVERSION\n"
+	checkversion
+	exit
+}
+
+checkversion() {
+	printf "Checking for newer version by finger @dawoodfall.net ...\n"
+	test=$(finger @dawoodfall.net | grep mkslack)
+	latest=$(echo $test | awk '{print $2}')
+	if [[ -z $test ]]; then
+		printf "Unable to verify latest version.\n"
+	elif [[ $latest != $SCRIPTVERSION ]]; then
+		printf "Newer version of mkslack available:\n"
+		printf "$test\n"
+	elif [[ $latest == $SCRIPTVERSION ]]; then
+		printf "No newer version available.\n"
+	fi
+}
+
+usage() {
+	cat << EOF 
+mkslack - a SlackBuild generator script
+Version $SCRIPTVERSION
+(C) David Woodfall 2010
+
+This slackbuild generator uses templates stored in /usr/share/mkslack/templates
+which you can edit for copyright.
+
+mkslack reads /etc/mkslack/mkslack.conf for name and email address. You
+should therefore edit this file.
+
+The slackbuild template is based on the one at slackbuilds.org and
+shouldn't be changed too much apart from the aforementioned. In particular
+the lines for man and info pages and <documentation> should not be edited
+as the script will look for those lines to be exactly the same, and if not
+needed, delete them.
+
+The PRGNAM, VERSION, ARCHIVE recognition is very loosely done. It can find
+standard source archives which can be .tar.gz .tar.bz2 or .tgz. If you have
+a source archive with a '-' in the version number then mkslack will be
+borked. In this case you can still use mkslack to build the slackbuild,
+but you must edit it by hand before running it.
+
+Syntax:
+
+mkslack [options] <archive>
+
+Options:
+-h --help		Usage.
+-r --run		Run SlackBuild after creation. Got root?
+-i --install		Install the package after running.
+-l --list		Pipe archive contents to /usr/bin/most and exit.
+-v --version		Version of mkslack.
+
+The documents list in top level of source tree can be adjusted by command:
+DOCS="SomeFile" mkslack <archive>
+This will add 'SomeFile' to the list. You can also edit the DOCS list in
+this script. Any that it doesn't find will be removed from the list.
+
+Build can be specified by:
+BUILD=2 mkslack <archive>
+Otherwise it defaults to 1.
+
+ARCH can be specified by:
+ARCH=xxx mkslack <archive>
+It defaults to i486 the same as a regular SlackBuild.
+
+TAG can be specified by:
+TAG=xxx mkslack <archive>
+EOF
+exit 0
+}
+
+get_commandline() {
+	until [ -z "$1" ]
+	do
+		FILENAME="$1"
+		[[ $1 = "-h" ]] && usage
+		[[ $1 = "-r" ]] && RUN=1
+		[[ $1 = "-i" ]] && INSTALL=1
+		[[ $1 = "-ir" || $1 = "-ri" ]] && { RUN=1; INSTALL=1; }
+		[[ $1 = "-l" ]] && LIST=1
+		[[ $1 = "-v" ]] && version
+		[[ $1 = "--help" ]] && usage
+		[[ $1 = "--run" ]] && RUN=1
+		[[ $1 = "--install" ]] && INSTALL=1
+		[[ $1 = "--list" ]] && LIST=1
+		[[ $1 = "--version" ]] && version
+		shift
+	done
+}
+
+common() {
+	if [ -n "$DOCS" ]; then
+		printf "Adjusting <documentation>\n"
+
+		for i in $DOCS
+		do
+			DOC=$(echo "$TOPCONTENTS" | grep $i)
+			FULLDOCS=$FULLDOCS$(echo $DOC | cut -d/ -f2)" "
+		done
+
+		if [[ -n $(echo "$TOPCONTENTS" | grep -w 'docs') ]];then
+			FULLDOCS="$FULLDOCS docs"
+		fi
+	
+		if [[ -n $(echo "$TOPCONTENTS" | grep -w 'DOCS') ]];then
+			FULLDOCS="$FULLDOCS DOCS"
+		fi
+	
+		if [[ -n $(echo "$TOPCONTENTS" | grep '.txt') ]];then
+			FULLDOCS="$FULLDOCS *.txt"
+		fi
+	
+		if [[ -n $(echo "$TOPCONTENTS" | grep '.TXT') ]];then
+			FULLDOCS="$FULLDOCS *.TXT"
+		fi
+	
+		FULLDOCS=$(echo "$FULLDOCS" | tr -s " ")
+
+		sed -i "s#<documentation>#$FULLDOCS#" $PRGNAM.SlackBuild
+
+		printf "%s %s " "Docs:"$FULLDOCS
+		printf "\nExtra documents should be specified on command line or added later.\n"
+	else
+		first=$(grep -n '<documentation>' $PRGNAM.SlackBuild | cut -f1 -d: )
+		first=$(expr $first - 1)
+
+		if [ -n $first ]; then
+			last=$[first+2]
+			sed -i "${first},${last}d" $PRGNAM.SlackBuild
+		fi
+	fi
+
+
+	if [[ -n $SRCNAM ]]; then
+		sed -i "s%@SRCNAM@%${SRCNAM}%g" $PRGNAM.SlackBuild
+	fi
+	sed -i "s%@PRGNAM@%${PRGNAM}%g" $PRGNAM.SlackBuild
+	sed -i "s%@VERSION@%${VERSION}%g" $PRGNAM.SlackBuild
+	sed -i "s%@ARCHIVE_TYPE@%${ARCHIVE_TYPE}%g" $PRGNAM.SlackBuild
+	sed -i "s%@NAME@%${NAME}%g" $PRGNAM.SlackBuild
+	sed -i "s%@EMAIL@%${EMAIL}%g" $PRGNAM.SlackBuild
+	sed -i "s%@TAG@%${TAG}%g" $PRGNAM.SlackBuild
+	sed -i "s%@TMP@%${TMP}%g" $PRGNAM.SlackBuild
+
+	printf "SlackBuild built.\n"
+
+	if [[ $KEEPBACKUPS == "YES" ]]; then
+		for n in $(seq 4 -1 1)
+		{
+			if [ -r doinst.sh.$n ]; then
+				mv -f doinst.sh.$n doinst.sh.$[n+1]
+			fi
+		}
+		if [ -r doinst.sh ]; then
+			mv -f doinst.sh doinst.sh.1
+		fi
+	fi
+
+	if [[ -n $(echo $FULLCONTENTS | grep $PRGNAM.desktop) ]]; then
+		printf "Desktop file found. Editing doinst.sh.\n"
+cat << EOF > $CWD/doinst.sh
+# We'll assume that a desktop file also indicates an icon
+# But you should edit this as needed.
+
+ if [ -x /usr/bin/update-desktop-database ]; then
+   /usr/bin/update-desktop-database -q usr/share/applications >/dev/null 2>&1
+ fi
+ 
+ if [ -e usr/share/icons/hicolor/icon-theme.cache ]; then
+   if [ -x /usr/bin/gtk-update-icon-cache ]; then
+     /usr/bin/gtk-update-icon-cache usr/share/icons/hicolor >/dev/null 2>&1
+   fi
+ fi
+
+EOF
+	fi
+
+	if [[ -n $(echo $FULLCONTENTS | grep $PRGNAM.xml) ]]; then
+		printf "Looks like a mimetype file. Editing doinst.sh.\n"
+cat << EOF >> $CWD/doinst.sh
+# Looks like a mimetype file.
+ 
+ if [ -x /usr/bin/update-mime-database ]; then
+   /usr/bin/update-mime-database usr/share/mime >/dev/null 2>&1
+ fi
+
+EOF
+	fi
+
+	if [ ! -r doinst.sh ]; then
+		sed -i '/cat $CWD\/doinst.sh/d' $PRGNAM.SlackBuild
+	fi
+
+	if [[ $SOURCE_DIR != $PRGNAM-$VERSION && $SOURCE_DIR != $SRCNAM-$VERSION ]]; then
+		printf $bred"Archive source output directory does not match archive name.\n"
+		printf $bred"You will need to adjust the SlackBuild by hand to account for this.\n"
+		printf $normal
+#		printf $normal"Exiting now.\n"
+#		exit 1
+	fi
+}
+
+autotools() {
+	if [[ -n $autogen ]]; then
+		printf "No configure found.\nFound autogen.sh\n"
+		first=$(grep -n '^CFLAGS=' $PRGNAM.SlackBuild | cut -f1 -d: )
+
+		if [ $first -ne 0 ]; then
+			sed -i "${first} i./autogen.sh" $PRGNAM.SlackBuild
+		fi
+	fi
+
+	if [[ -n $autoconf ]]; then
+		printf "No configure or autogen.sh found.\nAdding autoreconf -i --force\n"
+		first=$(grep -n '^CFLAGS=' $PRGNAM.SlackBuild | cut -f1 -d: )
+
+		if [ $first -ne 0 ]; then
+			sed -i "${first} iautoreconf -i --force" $PRGNAM.SlackBuild
+		fi
+	fi
+
+	# Remove man page lines if not needed
+	if [[ -z $(echo $TOPCONTENTS | grep man/) ]]; then
+
+		printf "No man directory. Removing from SlackBuild.\n"
+		first=$(grep -n 'find $PKG/usr/man -type f -exec gzip -9 ' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
+
+		if [ -n $first ]; then
+			first=$[first-1]
+			last=$[first+3]
+			sed -i "${first},${last}d" $PRGNAM.SlackBuild
+		fi
+	fi
+
+	# Remove info page lines if not needed
+	if [[ -z $(echo $TOPCONTENTS | grep info/) ]]; then
+		printf "No info directory. Removing from SlackBuild.\n"
+		first=$(grep -n 'rm -f $PKG/usr/info/dir' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
+
+		if [ -n $first ]; then
+			last=$[first+3]
+			sed -i "${first},${last}d" $PRGNAM.SlackBuild
+		fi
+	fi
+	first=$(grep -n 'find $PKG -name \"perllocal.pod\"' $PRGNAM.SlackBuild | cut -f1 -d:)
+	if [[ -n $first ]]; then
+		sed -i "${first}d" $PRGNAM.SlackBuild
+	fi
+	common
+}
+
+perl() {
+	makefile=$(echo "$TOPCONTENTS" | grep -i makefile.pl)
+	build=$(echo "$TOPCONTENTS" | grep -i build.pl)
+	
+	if [[ -n $makefile ]]; then
+		sed -i "s/Makefile.PL/$makefile/" $PRGNAM.SlackBuild
+		first=$(grep -ni 'perl Build.PL' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
+
+		if [ -n $first ]; then
+			last=$[first+9]
+			sed -i "${first},${last}d" $PRGNAM.SlackBuild
+		fi
+	elif [[ -n $build ]]; then
+		sed -i "s/Build.PL/$build/" $PRGNAM.SlackBuild
+		first=$(grep -ni 'perl Makefile.PL' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
+
+		if [ -n $first ]; then
+			last=$[first+8]
+			sed -i "${first},${last}d" $PRGNAM.SlackBuild
+		fi
+
+	fi
+	common
+}
+
+python() {
+	common
+}
+
+run_inspect() {
+	TOPCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE_TYPE | cut -d/ -f2)
+	FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE_TYPE)
+	BUILDTYPE=autotools
+
+	printf "Looking to see what sort of template to use...\n"
+
+	if [[ -n $(echo $TOPCONTENTS | grep CMakeLists.txt) ]]; then
+		printf "Looks like a cmake package.\n"
+		BUILDTYPE=cmake
+	elif [[ -n $(echo $TOPCONTENTS | grep setup.py) ]]; then
+		printf "Looks like a python package.\n"
+		SRCNAM=$PRGNAM
+		PRGNAM=python-$SRCNAM
+		BUILDTYPE=python
+	elif [[ -n $(echo $TOPCONTENTS | grep -i -e 'Makefile.PL' -e 'Build.PL') ]]; then
+		printf "Looks like a perl package.\n"
+		SRCNAM=$PRGNAM
+		PRGNAM=perl-$SRCNAM
+		BUILDTYPE=perl
+	else 
+		printf "Looks like a standard autotools.\n"
+		if [[ -z $(echo "$TOPCONTENTS" | grep "configure$") ]]; then
+			if [[ -n $(echo $TOPCONTENTS | grep 'autogen.sh') ]]; then
+				autogen=YES
+			else
+				autoconf=YES
+			fi
+		fi
+
+	fi
+
+	printf "PRGNAM:\t\t\t$PRGNAM\n"
+	printf "VERSION:\t\t$VERSION\n"
+	printf "ARCH:\t\t\t$ARCH\n"
+	printf "BUILD:\t\t\t$BUILD\n"
+	printf "TAG:\t\t\t$TAG\n"
+
+	TEMPLATE=$BUILDTYPE-template.SlackBuild
+
+	if [[ $KEEPBACKUPS == "YES" ]]; then
+		for n in $(seq 4 -1 1)
+		{
+			if [ -r $PRGNAM.SlackBuild.$n ]; then
+				mv -f $PRGNAM.SlackBuild.$n $PRGNAM.SlackBuild.$[n+1]
+			fi
+		}
+		if [ -r $PRGNAM.SlackBuild ]; then
+			mv -f $PRGNAM.SlackBuild $PRGNAM.SlackBuild.1
+		fi
+	fi
+
+	cat $TEMPLATES/$TEMPLATE > $PRGNAM.SlackBuild
+	chmod +x $PRGNAM.SlackBuild
+	$BUILDTYPE
+}
+
+run_build() {
+	if [ $UID != 0 ]; then
+		printf "You need to be root to run the SlackBuild\n"
+		exit
+	fi
+
+	sh $PRGNAM.SlackBuild
+
+	if [ -n $INSTALL ]; then
+		upgradepkg --reinstall --install-new $PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
+	fi
+}
+
+init_vars() {
+	if [[ ! -f $FILENAME || -z $FILENAME ]]; then
+		printf "File doesn't exist.\n"
+		exit 1
+	fi
+
+	bred='\e[01;31m'
+	normal='\e[m\017'
+	APPLICATION_BASENAME=$(basename $FILENAME)
+	ARCHIVE_TYPE=$(echo $APPLICATION_BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
+	if [ ${ARCHIVE_TYPE: -3} = "tgz" ]; then ARCHIVE_TYPE=tgz; fi
+	if [ ${ARCHIVE_TYPE: -3} = "zip" ]; then ARCHIVE_TYPE=zip; fi
+	VERSION=$(echo $APPLICATION_BASENAME | awk -F - '{print $NF}' \
+		| sed "s/$ARCHIVE_TYPE//" | sed 's/.$//')
+	PRGNAM=$(echo $APPLICATION_BASENAME | sed "s/-$VERSION//" | sed "s/$ARCHIVE_TYPE//" | sed 's/.$//')
+	SRCNAM=$PRGNAM
+	SOURCE_DIR=$(tar tf $PRGNAM-$VERSION.$ARCHIVE_TYPE 2>/dev/null | cut -f1 -d/ | head -n 1)
+}
+
+make_files() {
+	
+	if [[ $KEEPBACKUPS == "YES" ]]; then
+		for n in $(seq 4 -1 1)
+		{
+			if [ -r $PRGNAM.info.$n ]; then
+				mv -f $PRGNAM.info.$n $PRGNAM.info.$[n+1]
+			fi
+			if [ -r slack-desc.$n ]; then
+				mv -f slack-desc.$n slack-desc.$[n+1]
+			fi
+		}
+		if [ -r $PRGNAM.info ]; then
+			mv -f $PRGNAM.info $PRGNAM.info.1
+		fi
+		if [ -r slack-desc ]; then
+			mv -f slack-desc slack-desc.1
+		fi
+	fi
+
+	cat $TEMPLATES/template.info > $PRGNAM.info
+	cat $TEMPLATES/slack-desc > slack-desc
+
+	blank="                                          "
+	blanklen=${#PRGNAM}
+	blank=${blank:1:blanklen}
+	sed -i "s%       |%${blank}|%" slack-desc
+	sed -i "s%appname%${PRGNAM}%g" slack-desc
+	sed -i "s%@PRGNAM@%${PRGNAM}%g" $PRGNAM.info
+	sed -i "s%@VERSION@%${VERSION}%g" $PRGNAM.info
+	sed -i "s%@NAME@%${NAME}%g" $PRGNAM.info
+	sed -i "s%@EMAIL@%${EMAIL}%g" $PRGNAM.info
+
+	MD5SUM=$(md5sum ${SRCNAM}-${VERSION}.${ARCHIVE_TYPE} | cut -f1 -d' ')
+
+	printf "md5sum of archive:\t$MD5SUM\n"
+	
+	if [[ "$ARCH" = "i486" || "$ARCH" = "i686" ]]; then
+		sed -i "s%@md5sum@%$MD5SUM%" $PRGNAM.info
+		sed -i "s%@md5sum64@%%" $PRGNAM.info
+	elif [ "$ARCH" = "x86_64" ]; then
+		sed -i "s%@md5sum64@%$MD5SUM%" $PRGNAM.info
+		sed -i "s%@md5sum@%%" $PRGNAM.info
+	fi
+	printf "Info built.\n"
+}
+
+list() {
+	tar ft $PRGNAM-$VERSION.$ARCHIVE_TYPE | most
+	exit
+}
+
+get_commandline "$@"
+checkversion
+init_vars
+
+if [[ -n $LIST ]]; then list; fi
+
+run_inspect
+make_files
+
+if [[ -n $RUN ]]; then run_build; fi
+
