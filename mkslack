@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash
 
 # Build system for generating SlackBuild scripts
 
@@ -37,28 +37,8 @@ source $CONFIG
 TAG="_${UTAG:-$TAG}"
 TMP=${TAG/_/}
 
-version() {
-	printf "mkslack $SCRIPTVERSION\n"
-	checkversion
-	exit
-}
-
-checkversion() {
-	printf "Checking for newer version by finger @dawoodfall.net ...\n"
-	test=$(finger @dawoodfall.net | grep mkslack)
-	latest=$(echo $test | awk '{print $2}')
-	if [[ -z $test ]]; then
-		printf "Unable to verify latest version.\n"
-	elif [[ $latest != $SCRIPTVERSION ]]; then
-		printf "Newer version of mkslack available:\n"
-		printf "$test\n"
-	elif [[ $latest == $SCRIPTVERSION ]]; then
-		printf "No newer version available.\n"
-	fi
-}
-
 usage() {
-	cat << EOF 
+	cat << EOF
 mkslack - a SlackBuild generator script
 Version $SCRIPTVERSION
 (C) David Woodfall 2010
@@ -128,6 +108,25 @@ get_commandline() {
 		[[ $1 = "--version" ]] && version
 		shift
 	done
+}
+
+init_vars() {
+	if [[ ! -f $FILENAME || -z $FILENAME ]]; then
+		printf "File doesn't exist.\n"
+		exit 1
+	fi
+
+	bred='\e[01;31m'
+	normal='\e[m\017'
+	APPLICATION_BASENAME=$(basename $FILENAME)
+	ARCHIVE_TYPE=$(echo $APPLICATION_BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
+	if [ ${ARCHIVE_TYPE: -3} = "tgz" ]; then ARCHIVE_TYPE=tgz; fi
+	if [ ${ARCHIVE_TYPE: -3} = "zip" ]; then ARCHIVE_TYPE=zip; fi
+	VERSION=$(echo $APPLICATION_BASENAME | awk -F - '{print $NF}' \
+		| sed "s/$ARCHIVE_TYPE//" | sed 's/.$//')
+	PRGNAM=$(echo $APPLICATION_BASENAME | sed "s/-$VERSION//" | sed "s/$ARCHIVE_TYPE//" | sed 's/.$//')
+	SRCNAM=$PRGNAM
+	SOURCE_DIR=$(tar tf $PRGNAM-$VERSION.$ARCHIVE_TYPE 2>/dev/null | cut -f1 -d/ | head -n 1)
 }
 
 common() {
@@ -207,7 +206,7 @@ cat << EOF > $CWD/doinst.sh
  if [ -x /usr/bin/update-desktop-database ]; then
    /usr/bin/update-desktop-database -q usr/share/applications >/dev/null 2>&1
  fi
- 
+
  if [ -e usr/share/icons/hicolor/icon-theme.cache ]; then
    if [ -x /usr/bin/gtk-update-icon-cache ]; then
      /usr/bin/gtk-update-icon-cache usr/share/icons/hicolor >/dev/null 2>&1
@@ -221,7 +220,7 @@ EOF
 		printf "Looks like a mimetype file. Editing doinst.sh.\n"
 cat << EOF >> $CWD/doinst.sh
 # Looks like a mimetype file.
- 
+
  if [ -x /usr/bin/update-mime-database ]; then
    /usr/bin/update-mime-database usr/share/mime >/dev/null 2>&1
  fi
@@ -340,7 +339,7 @@ run_inspect() {
 		SRCNAM=$PRGNAM
 		PRGNAM=perl-$SRCNAM
 		BUILDTYPE=perl
-	else 
+	else
 		printf "Looks like a standard autotools.\n"
 		if [[ -z $(echo "$TOPCONTENTS" | grep "configure$") ]]; then
 			if [[ -n $(echo $TOPCONTENTS | grep 'autogen.sh') ]]; then
@@ -388,25 +387,6 @@ run_build() {
 	if [ -n $INSTALL ]; then
 		upgradepkg --reinstall --install-new $PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
 	fi
-}
-
-init_vars() {
-	if [[ ! -f $FILENAME || -z $FILENAME ]]; then
-		printf "File doesn't exist.\n"
-		exit 1
-	fi
-
-	bred='\e[01;31m'
-	normal='\e[m\017'
-	APPLICATION_BASENAME=$(basename $FILENAME)
-	ARCHIVE_TYPE=$(echo $APPLICATION_BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
-	if [ ${ARCHIVE_TYPE: -3} = "tgz" ]; then ARCHIVE_TYPE=tgz; fi
-	if [ ${ARCHIVE_TYPE: -3} = "zip" ]; then ARCHIVE_TYPE=zip; fi
-	VERSION=$(echo $APPLICATION_BASENAME | awk -F - '{print $NF}' \
-		| sed "s/$ARCHIVE_TYPE//" | sed 's/.$//')
-	PRGNAM=$(echo $APPLICATION_BASENAME | sed "s/-$VERSION//" | sed "s/$ARCHIVE_TYPE//" | sed 's/.$//')
-	SRCNAM=$PRGNAM
-	SOURCE_DIR=$(tar tf $PRGNAM-$VERSION.$ARCHIVE_TYPE 2>/dev/null | cut -f1 -d/ | head -n 1)
 }
 
 make_files() {
@@ -461,6 +441,26 @@ list() {
 	exit
 }
 
+version() {
+	printf "mkslack $SCRIPTVERSION\n"
+	checkversion
+	exit
+}
+
+checkversion() {
+	printf "Checking for newer version by finger @dawoodfall.net ...\n"
+	test=$(finger @dawoodfall.net | grep mkslack)
+	latest=$(echo $test | awk '{print $2}')
+	if [[ -z $test ]]; then
+		printf "Unable to verify latest version.\n"
+	elif [[ $latest != $SCRIPTVERSION ]]; then
+		printf "Newer version of mkslack available:\n"
+		printf "$test\n"
+	elif [[ $latest == $SCRIPTVERSION ]]; then
+		printf "No newer version available.\n"
+	fi
+}
+
 get_commandline "$@"
 checkversion
 init_vars
@@ -472,3 +472,7 @@ make_files
 
 if [[ -n $RUN ]]; then run_build; fi
 
+# FIXME: I never use tabs - the following modeline overrides my .vimrc so I
+# can comfortably edit this file without messing up the pre-existent tabs, but
+# needs to be removed.
+# vim:set ts=4 noet:
