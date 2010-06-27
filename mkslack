@@ -92,20 +92,16 @@ exit 0
 }
 
 get_commandline() {
-	until [ -z "$1" ]
-	do
-		FILENAME="$1"
-		[[ $1 = "-h" ]] && usage
-		[[ $1 = "-r" ]] && RUN=1
-		[[ $1 = "-i" ]] && INSTALL=1
-		[[ $1 = "-ir" || $1 = "-ri" ]] && { RUN=1; INSTALL=1; }
-		[[ $1 = "-l" ]] && LIST=1
-		[[ $1 = "-v" ]] && version
-		[[ $1 = "--help" ]] && usage
-		[[ $1 = "--run" ]] && RUN=1
-		[[ $1 = "--install" ]] && INSTALL=1
-		[[ $1 = "--list" ]] && LIST=1
-		[[ $1 = "--version" ]] && version
+	until [ -z "$1" ]; do
+		case "$1" in
+			-h|--help) usage ;;
+			-r|--run) RUN=1 ;;
+			-i|--install) INSTALL=1 ;;
+			-l|--list) LIST=1 ;;
+			-v|--version) version ;;
+			-V|--ckver) checkversion ;;
+			*) FILENAME="$1" ;;
+		esac
 		shift
 	done
 }
