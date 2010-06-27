@@ -73,7 +73,7 @@ Options:
 -h --help		Usage.
 -r --run		Run SlackBuild after creation. Got root?
 -i --install		Install the package after running.
--l --list		Pipe archive contents to /usr/bin/most and exit.
+-l --list		Pipe archive contents to ${PAGER:-more} and exit.
 -v --version		Version of mkslack.
 
 The documents list in top level of source tree can be adjusted by command:
@@ -438,7 +438,7 @@ make_files() {
 }
 
 list() {
-	tar ft $PRGNAM-$VERSION.$ARCHIVE | most
+	tar tf $PRGNAM-$VERSION.$ARCHIVE | ${PAGER:-more}
 	exit
 }
 
