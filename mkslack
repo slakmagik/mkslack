@@ -42,57 +42,33 @@ bred='\e[01;31m'
 normal='\e[m\017'
 
 usage() {
-	cat << EOF
-mkslack - a SlackBuild generator script
-Version $SCRIPTVERSION
+cat << EOF
+$SCRIPT $SCRIPTVERSION - a SlackBuild generator script
 (C) David Woodfall 2010
-
-This slackbuild generator uses templates stored in /usr/share/mkslack/templates
-which you can edit for copyright.
-
-mkslack reads /etc/mkslack/mkslack.conf for name and email address. You
-should therefore edit this file.
-
-The slackbuild template is based on the one at slackbuilds.org and
-shouldn't be changed too much apart from the aforementioned. In particular
-the lines for man and info pages and <documentation> should not be edited
-as the script will look for those lines to be exactly the same, and if not
-needed, delete them.
-
-The PRGNAM, VERSION, ARCHIVE recognition is very loosely done. It can find
-standard source archives which can be .tar.gz .tar.bz2 or .tgz. If you have
-a source archive with a '-' in the version number then mkslack will be
-borked. In this case you can still use mkslack to build the slackbuild,
-but you must edit it by hand before running it.
 
 Syntax:
 
-mkslack [options] <archive>
+mkslack [OPTIONS] ARCHIVE
 
-Options:
--h --help		Usage.
--r --run		Run SlackBuild after creation. Got root?
--i --install		Install the package after running.
--l --list		Pipe archive contents to ${PAGER:-more} and exit.
--v --version		Version of mkslack.
+OPTIONS:
+-h | --help		Print this message.
+-r | --run		Run SlackBuild after creation. Got root?
+-i | --install		Install the package after running.
+-l | --list		Pipe archive contents to ${PAGER:-more} and exit.
+-v | --version		Print version.
+-V | --ckver		Check for an updated version.
 
-The documents list in top level of source tree can be adjusted by command:
-DOCS="SomeFile" mkslack <archive>
+The documents list in top level of source tree can be adjusted by giving the
+command:
+DOCS="SomeFile" mkslack ARCHIVE
 This will add 'SomeFile' to the list. You can also edit the DOCS list in
 this script. Any that it doesn't find will be removed from the list.
 
-Build can be specified by:
-BUILD=2 mkslack <archive>
-Otherwise it defaults to 1.
-
-ARCH can be specified by:
-ARCH=xxx mkslack <archive>
-It defaults to i486 the same as a regular SlackBuild.
-
-TAG can be specified by:
-TAG=xxx mkslack <archive>
+Similarly, BUILD (default=1), ARCH (default=i486), and TAG (default=SBo) can
+be specified by:
+VARIABLE=VALUE mkslack [OPTIONS] ARCHIVE
 EOF
-exit 0
+exit
 }
 
 get_commandline() {

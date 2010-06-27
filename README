@@ -2,8 +2,22 @@ mkslack - a SlackBuild generator script
 (C) David Woodfall 2010
 
 This slackbuild generator uses templates stored in /usr/share/mkslack/templates
-and a config file /etc/mkslack/mkslack.conf which you must edit for name, 
-email, copyright etc.
+which you can edit for copyright.
+
+mkslack reads /etc/mkslack/mkslack.conf for name and email address. You
+should therefore edit this file.
+
+The slackbuild template is based on the one at slackbuilds.org and
+shouldn't be changed too much apart from the aforementioned. In particular
+the lines for man and info pages and <documentation> should not be edited
+as the script will look for those lines to be exactly the same, and if not
+needed, delete them.
+
+The PRGNAM, VERSION, ARCHIVE recognition is very loosely done. It can find
+standard source archives which can be .tar.gz .tar.bz2 or .tgz. If you have
+a source archive with a '-' in the version number then mkslack will be
+borked. In this case you can still use mkslack to build the slackbuild,
+but you must edit it by hand before running it.
 
 Idea for use:
 
@@ -21,11 +35,12 @@ Syntax:
 mkslack [options] <archive>
 
 Options:
--h --help		Usage.
--r --run		Run SlackBuild after creation. Got root?
--i --install	Install the package after running.
--l --list		Pipe archive contents to /usr/bin/most and exit.
--v --version	Version of mkslack.
+-h | --help	Usage.
+-r | --run	Run SlackBuild after creation. Got root?
+-i | --install	Install the package after running.
+-l | --list	Pipe archive contents to /usr/bin/most and exit.
+-v | --version	Version of mkslack.
+-V | --ckver	Check for an updated version.
 
 The documents list in top level of source tree can be adjusted by command:
 DOCS="SomeFile" mkslack <archive>
