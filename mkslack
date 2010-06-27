@@ -374,7 +374,7 @@ run_inspect() {
 }
 
 run_build() {
-	if [ $UID != 0 ]; then
+	if [ $UID -ne 0 ]; then
 		printf "You need to be root to run the SlackBuild\n"
 		exit
 	fi
@@ -382,7 +382,8 @@ run_build() {
 	sh $PRGNAM.SlackBuild
 
 	if [ -n $INSTALL ]; then
-		upgradepkg --reinstall --install-new $PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
+		upgradepkg --reinstall --install-new \
+			$PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
 	fi
 }
 
