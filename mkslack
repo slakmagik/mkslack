@@ -58,7 +58,6 @@ OPTIONS:
 -h | --help		Print this message.
 -r | --run		Run SlackBuild after creation. Got root?
 -i | --install		Install the package after running.
--l | --list		Pipe archive contents to ${PAGER:-more} and exit.
 -v | --version		Print version.
 -V | --ckver		Check for an updated version.
 
@@ -431,11 +430,6 @@ make_files() {
 	printf "Info built.\n"
 }
 
-list() {
-	tar tf $PRGNAM-$VERSION.$ARCHIVE | ${PAGER:-more}
-	exit
-}
-
 version() {
 	printf "$SCRIPT $SCRIPTVERSION\n"
 }
@@ -471,7 +465,6 @@ until [ -z "$1" ]; do
 		-h|--help) usage; exit ;;
 		-r|--run) RUN=1 ;;
 		-i|--install) INSTALL=1 ;;
-		-l|--list) LIST=1 ;;
 		-v|--version) version; exit ;;
 		-V|--ckver) check_version; exit ;;
 		*) FILENAME="$1" ;;
@@ -480,11 +473,6 @@ until [ -z "$1" ]; do
 done
 
 parse_archive || exit 1
-
-if [[ -n $LIST ]]; then
-	list
-fi
-
 run_inspect
 make_files
 
