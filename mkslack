@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# {{{ Copyright ==============================================================
+
 # Build system for generating SlackBuild scripts
 
 # Copyright 2010  David Woodfall <info@davidwoodfall.co.uk>
@@ -22,6 +24,11 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Modifications (c) 2010 slakmagik <slakmagik@gmail.com>
+
+# }}}
+# {{{ Global variables =======================================================
+
 SCRIPT=${0##*/}
 SCRIPTVERSION=3.0
 ARCH=${ARCH:-i486}
@@ -32,14 +39,11 @@ TEMPLATES=/usr/share/mkslack/templates
 CONFIG=/etc/mkslack/mkslack.conf
 DOCS=$(echo ${DOCS}" LICENSE README COPYRIGHT CREDITS HACKING TODO AUTHORS INSTALL CHANGELOG COPYING NEWS THANKS CHANGES MAINTAINERS CODING_STYLE VERSION ChangeLog Changelog Copyright CopyRight " | sed 's/^ //')
 
-
-UTAG=$TAG
-source $CONFIG
-TAG="_${UTAG:-$TAG}"
-TMP=${TAG/_/}
-
 bred='\e[01;31m'
 normal='\e[m\017'
+
+# }}}
+# {{{ Functions ==============================================================
 
 usage() {
 cat << EOF
@@ -68,31 +72,50 @@ Similarly, BUILD (default=1), ARCH (default=i486), and TAG (default=SBo) can
 be specified by:
 VARIABLE=VALUE mkslack [OPTIONS] ARCHIVE
 EOF
-exit
 }
 
-get_commandline() {
-	until [ -z "$1" ]; do
-		case "$1" in
-			-h|--help) usage ;;
-			-r|--run) RUN=1 ;;
-			-i|--install) INSTALL=1 ;;
-			-l|--list) LIST=1 ;;
-			-v|--version) version ;;
-			-V|--ckver) check_version ;;
-			*) FILENAME="$1" ;;
-		esac
-		shift
-	done
+validate_cfg() {
+	if [ -z "$KEEPBACKUPS" ]; then
+		MISSING="KEEPBACKUPS $MISSING"
+	fi
+	if [ -z "$TAG" ]; then
+		MISSING="TAG $MISSING"
+	fi
+	if [ -z "$EMAIL" ]; then
+		MISSING="EMAIL $MISSING"
+	fi
+	if [ -z "$NAME" ]; then
+		MISSING="NAME $MISSING"
+	fi
+
+	if echo $TAG | grep -q '^_'; then
+		UNDERSCORE="TAG has an invalid leading underscore."
+		if [ -n "$MISSING" ]; then
+			UNDERSCORE="Additionally, $UNDERSCORE"
+		fi
+	fi
+
+	if [ -n "$MISSING" ] || [ -n "$UNDERSCORE" ]; then
+		printf "$SCRIPT: configuration file error(s):\n" >&2
+		if [ -n "$MISSING" ]; then
+			printf "the following variable(s) are not properly set:\n" >&2
+			printf "$MISSING\n" >&2
+		fi
+		if [ -n "$UNDERSCORE" ]; then
+			printf "$UNDERSCORE" >&2
+		fi
+		return 1
+	fi
 }
 
 parse_archive() {
+	BASENAME=${FILENAME##*/}
+
 	if [ ! -f "$FILENAME" ]; then
 		printf "$SCRIPT: file doesn't exist.\n" >&2
-		exit 1
+		return 1
 	fi
 
-	BASENAME=${FILENAME##*/}
 	ARCHIVE=$(echo $BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
 	if [ ${ARCHIVE##*.} = "tgz" ]; then ARCHIVE=tgz; fi
 	if [ ${ARCHIVE##*.} = "zip" ]; then ARCHIVE=zip; fi
@@ -159,7 +182,7 @@ common() {
 	sed -i "s%@NAME@%${NAME}%g" $PRGNAM.SlackBuild
 	sed -i "s%@EMAIL@%${EMAIL}%g" $PRGNAM.SlackBuild
 	sed -i "s%@TAG@%${TAG}%g" $PRGNAM.SlackBuild
-	sed -i "s%@TMP@%${TMP}%g" $PRGNAM.SlackBuild
+	sed -i "s%@TMP@%$TAG%g" $PRGNAM.SlackBuild
 
 	printf "SlackBuild built.\n"
 
@@ -415,7 +438,6 @@ list() {
 
 version() {
 	printf "$SCRIPT $SCRIPTVERSION\n"
-	exit
 }
 
 check_version() {
@@ -433,17 +455,47 @@ check_version() {
 	fi
 }
 
-get_commandline "$@"
-parse_archive
+# }}}
+# {{{ Main ===================================================================
 
-if [[ -n $LIST ]]; then list; fi
+if [ -r $CONFIG ]; then
+	. $CONFIG
+	validate_cfg || exit 1
+else
+	printf "$SCRIPT: config file not found or not readable." >&2
+	exit 1
+fi
+
+until [ -z "$1" ]; do
+	case "$1" in
+		-h|--help) usage; exit ;;
+		-r|--run) RUN=1 ;;
+		-i|--install) INSTALL=1 ;;
+		-l|--list) LIST=1 ;;
+		-v|--version) version; exit ;;
+		-V|--ckver) check_version; exit ;;
+		*) FILENAME="$1" ;;
+	esac
+	shift
+done
+
+parse_archive || exit 1
+
+if [[ -n $LIST ]]; then
+	list
+fi
 
 run_inspect
 make_files
 
-if [[ -n $RUN ]]; then run_build; fi
+if [[ -n $RUN ]]; then
+	run_build
+fi
 
+# }}}
 # FIXME: I never use tabs - the following modeline overrides my .vimrc so I
 # can comfortably edit this file without messing up the pre-existent tabs, but
 # needs to be removed.
 # vim:set ts=4 noet:
+# This one can be kept
+# vim:set fdm=marker nofen:
