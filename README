@@ -36,9 +36,8 @@ mkslack [options] <archive>
 
 Options:
 -h | --help	Usage.
--r | --run	Run SlackBuild after creation. Got root?
--i | --install	Install the package after running.
--l | --list	Pipe archive contents to /usr/bin/most and exit.
+-b | --build	Build the package with the SlackBuild. Got root?
+-i | --install	Install the package after building (implies -b).
 -v | --version	Version of mkslack.
 -V | --ckver	Check for an updated version.
 

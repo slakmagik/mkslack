@@ -56,8 +56,8 @@ mkslack [OPTIONS] ARCHIVE
 
 OPTIONS:
 -h | --help		Print this message.
--r | --run		Run SlackBuild after creation. Got root?
--i | --install		Install the package after running.
+-b | --build		Build the package with the SlackBuild. Got root?
+-i | --install		Install the package after building (implies -b).
 -v | --version		Print version.
 -V | --ckver		Check for an updated version.
 
@@ -319,7 +319,7 @@ python() {
 	common
 }
 
-run_inspect() {
+pick_template() {
 	printf "$SCRIPT: looking to see what sort of template to use...\n"
 
 	if echo $TOPCONTENTS | grep -q CMakeLists.txt; then
@@ -371,7 +371,7 @@ run_inspect() {
 	$BUILDTYPE # function call
 }
 
-run_build() {
+build() {
 	if [ $UID -ne 0 ]; then
 		printf "You need to be root to run the SlackBuild\n"
 		exit
@@ -463,7 +463,7 @@ fi
 until [ -z "$1" ]; do
 	case "$1" in
 		-h|--help) usage; exit ;;
-		-r|--run) RUN=1 ;;
+		-b|--build) _BUILD=1 ;;
 		-i|--install) INSTALL=1 ;;
 		-v|--version) version; exit ;;
 		-V|--ckver) check_version; exit ;;
@@ -473,11 +473,11 @@ until [ -z "$1" ]; do
 done
 
 parse_archive || exit 1
-run_inspect
+pick_template
 make_files
 
-if [[ -n $RUN ]]; then
-	run_build
+if [ -n "$_BUILD" ] || [ -n "$INSTALL" ]; then
+	build
 fi
 
 # }}}
