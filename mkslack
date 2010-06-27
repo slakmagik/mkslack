@@ -438,7 +438,7 @@ list() {
 }
 
 version() {
-	printf "mkslack $SCRIPTVERSION\n"
+	printf "$SCRIPT $SCRIPTVERSION\n"
 	exit
 }
 
