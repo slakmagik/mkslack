@@ -22,6 +22,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+SCRIPT=${0##*/}
 SCRIPTVERSION=3.0
 ARCH=${ARCH:-i486}
 BUILD=${BUILD:-1}
@@ -99,7 +100,7 @@ get_commandline() {
 			-i|--install) INSTALL=1 ;;
 			-l|--list) LIST=1 ;;
 			-v|--version) version ;;
-			-V|--ckver) checkversion ;;
+			-V|--ckver) check_version ;;
 			*) FILENAME="$1" ;;
 		esac
 		shift
@@ -439,26 +440,25 @@ list() {
 
 version() {
 	printf "mkslack $SCRIPTVERSION\n"
-	checkversion
 	exit
 }
 
-checkversion() {
-	printf "Checking for newer version by finger @dawoodfall.net ...\n"
-	test=$(finger @dawoodfall.net | grep mkslack)
-	latest=$(echo $test | awk '{print $2}')
-	if [[ -z $test ]]; then
-		printf "Unable to verify latest version.\n"
-	elif [[ $latest != $SCRIPTVERSION ]]; then
-		printf "Newer version of mkslack available:\n"
-		printf "$test\n"
-	elif [[ $latest == $SCRIPTVERSION ]]; then
+check_version() {
+	CKVER_CMD="finger @dawoodfall.net"
+
+	printf "$SCRIPT: checking for newer version by $CKVER_CMD ...\n"
+	latest=$($CKVER_CMD | awk '/mkslack/{print $2}')
+	if [ -z "$latest" ]; then
+		printf "Unable to verify latest version.\n" >&2
+		return 1
+	elif [ "$latest" != "$SCRIPTVERSION" ]; then
+		printf "Newer version available: $latest\n"
+	elif [ "$latest" = "$SCRIPTVERSION" ]; then
 		printf "No newer version available.\n"
 	fi
 }
 
 get_commandline "$@"
-checkversion
 init_vars
 
 if [[ -n $LIST ]]; then list; fi
