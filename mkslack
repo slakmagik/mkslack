@@ -126,8 +126,9 @@ parse_archive() {
 	# for use in the SBo files when the source and program name will
 	# differ (e.g., prepending 'perl-' to perl packages
 	SRCNAM=$PRGNAM
-	SOURCE_DIR=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null |
-		cut -f1 -d/ | head -n 1)
+	FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null)
+	TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
+	SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
 }
 
 common() {
@@ -321,52 +322,47 @@ python() {
 }
 
 run_inspect() {
-	TOPCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE | cut -d/ -f2)
-	FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE)
-	BUILDTYPE=autotools
+	printf "$SCRIPT: looking to see what sort of template to use...\n"
 
-	printf "Looking to see what sort of template to use...\n"
-
-	if [[ -n $(echo $TOPCONTENTS | grep CMakeLists.txt) ]]; then
+	if echo $TOPCONTENTS | grep -q CMakeLists.txt; then
 		printf "Looks like a cmake package.\n"
 		BUILDTYPE=cmake
-	elif [[ -n $(echo $TOPCONTENTS | grep setup.py) ]]; then
+	elif echo $TOPCONTENTS | grep -q setup.py; then
 		printf "Looks like a python package.\n"
 		SRCNAM=$PRGNAM
 		PRGNAM=python-$SRCNAM
 		BUILDTYPE=python
-	elif [[ -n $(echo $TOPCONTENTS | grep -i -e 'Makefile.PL' -e 'Build.PL') ]]; then
+	elif echo $TOPCONTENTS | egrep -qi '(Makefile|Build).PL'; then
 		printf "Looks like a perl package.\n"
 		SRCNAM=$PRGNAM
 		PRGNAM=perl-$SRCNAM
 		BUILDTYPE=perl
 	else
-		printf "Looks like a standard autotools.\n"
-		if [[ -z $(echo "$TOPCONTENTS" | grep "configure$") ]]; then
-			if [[ -n $(echo $TOPCONTENTS | grep 'autogen.sh') ]]; then
+		printf "Looks like a standard autotools package.\n"
+		BUILDTYPE=autotools
+		if ! echo "$TOPCONTENTS" | grep -q 'configure$'; then
+			if echo $TOPCONTENTS | grep -q 'autogen.sh'; then
 				autogen=YES
 			else
 				autoconf=YES
 			fi
 		fi
-
 	fi
 
-	printf "PRGNAM:\t\t\t$PRGNAM\n"
-	printf "VERSION:\t\t$VERSION\n"
-	printf "ARCH:\t\t\t$ARCH\n"
-	printf "BUILD:\t\t\t$BUILD\n"
-	printf "TAG:\t\t\t$TAG\n"
+	printf "%-9s%s\n" "PRGNAM:" "$PRGNAM"
+	printf "%-9s%s\n" "VERSION:" "$VERSION"
+	printf "%-9s%s\n" "ARCH:" "$ARCH"
+	printf "%-9s%s\n" "BUILD:" "$BUILD"
+	printf "%-9s%s\n" "TAG:" "$TAG"
 
 	TEMPLATE=$BUILDTYPE-template.SlackBuild
 
-	if [[ $KEEPBACKUPS == "YES" ]]; then
-		for n in $(seq 4 -1 1)
-		{
+	if [ $KEEPBACKUPS = "YES" ]; then
+		for n in $(seq 4 -1 1); do
 			if [ -r $PRGNAM.SlackBuild.$n ]; then
-				mv -f $PRGNAM.SlackBuild.$n $PRGNAM.SlackBuild.$[n+1]
+				mv -f $PRGNAM.SlackBuild.$n $PRGNAM.SlackBuild.$(($n+1))
 			fi
-		}
+		done
 		if [ -r $PRGNAM.SlackBuild ]; then
 			mv -f $PRGNAM.SlackBuild $PRGNAM.SlackBuild.1
 		fi
@@ -374,7 +370,7 @@ run_inspect() {
 
 	cat $TEMPLATES/$TEMPLATE > $PRGNAM.SlackBuild
 	chmod +x $PRGNAM.SlackBuild
-	$BUILDTYPE
+	$BUILDTYPE # function call
 }
 
 run_build() {
