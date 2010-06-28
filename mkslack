@@ -291,23 +291,12 @@ perl() {
 	makefile=$(echo "$TOPCONTENTS" | grep -i makefile.pl)
 	build=$(echo "$TOPCONTENTS" | grep -i build.pl)
 	
-	if [[ -n $makefile ]]; then
+	if [ -n "$makefile" ]; then
 		sed -i "s/Makefile.PL/$makefile/" $PRGNAM.SlackBuild
-		first=$(grep -ni 'perl Build.PL' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
-
-		if [ -n $first ]; then
-			last=$[first+9]
-			sed -i "${first},${last}d" $PRGNAM.SlackBuild
-		fi
-	elif [[ -n $build ]]; then
+		sed -i '/perl Build.PL/,/^$/d' $PRGNAM.SlackBuild
+	elif [ -n "$build" ]; then
 		sed -i "s/Build.PL/$build/" $PRGNAM.SlackBuild
-		first=$(grep -ni 'perl Makefile.PL' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
-
-		if [ -n $first ]; then
-			last=$[first+8]
-			sed -i "${first},${last}d" $PRGNAM.SlackBuild
-		fi
-
+		sed -i '/perl Makefile.PL/,/^$/d' $PRGNAM.SlackBuild
 	fi
 	common
 }
