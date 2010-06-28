@@ -261,51 +261,29 @@ EOF
 }
 
 autotools() {
-	if [[ -n $autogen ]]; then
+	if [ -n "$autogen" ]; then
 		printf "No configure found.\nFound autogen.sh\n"
-		first=$(grep -n '^CFLAGS=' $PRGNAM.SlackBuild | cut -f1 -d: )
-
-		if [ $first -ne 0 ]; then
-			sed -i "${first} i./autogen.sh" $PRGNAM.SlackBuild
-		fi
+		sed -i "/^CFLAGS=/i\./autogen.sh" $PRGNAM.SlackBuild
 	fi
 
-	if [[ -n $autoconf ]]; then
-		printf "No configure or autogen.sh found.\nAdding autoreconf -i --force\n"
-		first=$(grep -n '^CFLAGS=' $PRGNAM.SlackBuild | cut -f1 -d: )
-
-		if [ $first -ne 0 ]; then
-			sed -i "${first} iautoreconf -i --force" $PRGNAM.SlackBuild
-		fi
+	if [ -n "$autoconf" ]; then
+		printf "No configure or autogen.sh found.\n"
+		printf "Adding autoreconf -i --force\n"
+		sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
 	fi
 
 	# Remove man page lines if not needed
-	if [[ -z $(echo $TOPCONTENTS | grep man/) ]]; then
-
+	if ! echo $TOPCONTENTS | grep -q man/; then
 		printf "No man directory. Removing from SlackBuild.\n"
-		first=$(grep -n 'find $PKG/usr/man -type f -exec gzip -9 ' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
-
-		if [ -n $first ]; then
-			first=$[first-1]
-			last=$[first+3]
-			sed -i "${first},${last}d" $PRGNAM.SlackBuild
-		fi
+		sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
 	fi
 
 	# Remove info page lines if not needed
-	if [[ -z $(echo $TOPCONTENTS | grep info/) ]]; then
+	if ! echo $TOPCONTENTS | grep info/; then
 		printf "No info directory. Removing from SlackBuild.\n"
-		first=$(grep -n 'rm -f $PKG/usr/info/dir' $CWD/$PRGNAM.SlackBuild | cut -f1 -d:)
-
-		if [ -n $first ]; then
-			last=$[first+3]
-			sed -i "${first},${last}d" $PRGNAM.SlackBuild
-		fi
+		sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
 	fi
-	first=$(grep -n 'find $PKG -name \"perllocal.pod\"' $PRGNAM.SlackBuild | cut -f1 -d:)
-	if [[ -n $first ]]; then
-		sed -i "${first}d" $PRGNAM.SlackBuild
-	fi
+	sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
 	common
 }
 
