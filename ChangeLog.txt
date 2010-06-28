@@ -1,3 +1,8 @@
+Sun 27 Jun 2010 16:28:32 BST
+Version 3.1
+Fixed ARCH bug.
+Now puts appname into first line of slack-desc.
++--------------------------+
 Wed 23 Jun 2010 23:59:14 BST
 Version 3.0
 Adjusted docs.

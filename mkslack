@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
 # {{{ Copyright ==============================================================
 
 # Build system for generating SlackBuild scripts
 
 # Copyright 2010  David Woodfall <info@davidwoodfall.co.uk>
+# Modifications copyright 2010 slakmagik <slakmagik@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use of this script, with or without modification, is
@@ -24,14 +25,18 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Modifications (c) 2010 slakmagik <slakmagik@gmail.com>
-
 # }}}
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.0
-ARCH=${ARCH:-i486}
+SCRIPTVERSION=3.2
+if [ -z "$ARCH" ]; then
+  case "$( uname -m )" in
+    i?86) ARCH=i486 ;;
+    arm*) ARCH=arm ;;
+       *) ARCH=$( uname -m ) ;;
+  esac
+fi
 BUILD=${BUILD:-1}
 CWD=$(pwd)
 PKGTMP=/tmp
@@ -71,6 +76,7 @@ usage() {
 cat << EOF
 $SCRIPT $SCRIPTVERSION - a SlackBuild generator script
 (C) David Woodfall 2010
+(C) slakmagik 2010
 
 Syntax:
 
@@ -133,7 +139,7 @@ parse_archive() {
 	BASENAME=${FILENAME##*/}
 
 	if [ ! -f "$FILENAME" ]; then
-		printf "$SCRIPT: file doesn't exist.\n" >&2
+		printf "$SCRIPT: file not found.\n" >&2
 		return 1
 	fi
 
@@ -153,7 +159,7 @@ parse_archive() {
 
 common() {
 	if [ -n "$DOCS" ]; then
-		printf "Adjusting <documentation>\n"
+		printf "Generating documentation line ...\n"
 
 		for i in $DOCS; do
 			DOC=$(echo "$TOPCONTENTS" | grep $i)
@@ -200,7 +206,7 @@ common() {
 		s%@TMP@%$TAG%g
 		" $PRGNAM.SlackBuild
 
-	printf "SlackBuild built.\n"
+	printf "SlackBuild generated.\n"
 
 	if [ "$KEEPBACKUPS" = "YES" ]; then
 		for n in $(seq 4 -1 1); do
@@ -262,25 +268,25 @@ EOF
 
 autotools() {
 	if [ -n "$autogen" ]; then
-		printf "No configure found.\nFound autogen.sh\n"
+		printf "No configure file found.\nFound autogen.sh\n"
 		sed -i "/^CFLAGS=/i\./autogen.sh" $PRGNAM.SlackBuild
 	fi
 
 	if [ -n "$autoconf" ]; then
-		printf "No configure or autogen.sh found.\n"
+		printf "No configure file or autogen.sh found.\n"
 		printf "Adding autoreconf -i --force\n"
 		sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
 	fi
 
 	# Remove man page lines if not needed
 	if ! echo $TOPCONTENTS | grep -q man/; then
-		printf "No man directory. Removing from SlackBuild.\n"
+		printf "No man directory found. Removing from SlackBuild.\n"
 		sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
 	fi
 
 	# Remove info page lines if not needed
 	if ! echo $TOPCONTENTS | grep info/; then
-		printf "No info directory. Removing from SlackBuild.\n"
+		printf "No info directory found. Removing from SlackBuild.\n"
 		sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
 	fi
 	sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
@@ -302,6 +308,10 @@ perl() {
 }
 
 python() {
+	common
+}
+
+cmake() {
 	common
 }
 
@@ -359,8 +369,8 @@ pick_template() {
 
 build() {
 	if [ $UID -ne 0 ]; then
-		printf "You need to be root to run the SlackBuild\n"
-		exit
+		printf "You need to be root to run the SlackBuild\n" >&2
+		exit 1
 	fi
 
 	sh $PRGNAM.SlackBuild
@@ -396,6 +406,7 @@ make_files() {
 	sed -i "
 		s%       |%$blank|%
 		s%appname%$PRGNAM%g
+		9s/$PRGNAM:/$PRGNAM: $PRGNAM/
 		" slack-desc
 	sed -i "
 		s%@PRGNAM@%$PRGNAM%g
@@ -413,7 +424,7 @@ make_files() {
 	elif [ "$ARCH" = "x86_64" ]; then
 		sed -i "s%@md5sum64@%$MD5SUM%;s%@md5sum@%%" $PRGNAM.info
 	fi
-	printf "Info built.\n"
+	printf "Info and slack-desc generated.\n"
 }
 
 version() {
