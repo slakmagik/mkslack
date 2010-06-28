@@ -37,7 +37,29 @@ CWD=$(pwd)
 PKGTMP=/tmp
 TEMPLATES=/usr/share/mkslack/templates
 CONFIG=/etc/mkslack/mkslack.conf
-DOCS=$(echo ${DOCS}" LICENSE README COPYRIGHT CREDITS HACKING TODO AUTHORS INSTALL CHANGELOG COPYING NEWS THANKS CHANGES MAINTAINERS CODING_STYLE VERSION ChangeLog Changelog Copyright CopyRight " | sed 's/^ //')
+DOCS="
+	$DOCS
+	AUTHORS
+	CHANGELOG
+	CHANGES
+	CODING_STYLE
+	COPYING
+	COPYRIGHT
+	CREDITS
+	ChangeLog
+	Changelog
+	CopyRight
+	Copyright
+	HACKING
+	INSTALL
+	LICENSE
+	MAINTAINERS
+	NEWS
+	README
+	THANKS
+	TODO
+	VERSION
+	"
 
 bred='\e[01;31m'
 normal='\e[m\017'
@@ -133,71 +155,65 @@ common() {
 	if [ -n "$DOCS" ]; then
 		printf "Adjusting <documentation>\n"
 
-		for i in $DOCS
-		do
+		for i in $DOCS; do
 			DOC=$(echo "$TOPCONTENTS" | grep $i)
 			FULLDOCS=$FULLDOCS$(echo $DOC | cut -d/ -f2)" "
 		done
 
-		if [[ -n $(echo "$TOPCONTENTS" | grep -w 'docs') ]];then
+		if echo "$TOPCONTENTS" | grep -qw 'docs';then
 			FULLDOCS="$FULLDOCS docs"
 		fi
-	
-		if [[ -n $(echo "$TOPCONTENTS" | grep -w 'DOCS') ]];then
+
+		if echo "$TOPCONTENTS" | grep -qw 'DOCS';then
 			FULLDOCS="$FULLDOCS DOCS"
 		fi
-	
-		if [[ -n $(echo "$TOPCONTENTS" | grep '.txt') ]];then
+
+		if echo "$TOPCONTENTS" | grep -q '.txt';then
 			FULLDOCS="$FULLDOCS *.txt"
 		fi
-	
-		if [[ -n $(echo "$TOPCONTENTS" | grep '.TXT') ]];then
+
+		if echo "$TOPCONTENTS" | grep -q '.TXT';then
 			FULLDOCS="$FULLDOCS *.TXT"
 		fi
-	
+
 		FULLDOCS=$(echo "$FULLDOCS" | tr -s " ")
 
 		sed -i "s#<documentation>#$FULLDOCS#" $PRGNAM.SlackBuild
 
-		printf "%s %s " "Docs:"$FULLDOCS
-		printf "\nExtra documents should be specified on command line or added later.\n"
+		printf "%s%s\n" "Docs: " "$FULLDOCS"
+		printf "Extra documents should be specified on the command line "
+		printf "or added later.\n"
 	else
-		first=$(grep -n '<documentation>' $PRGNAM.SlackBuild | cut -f1 -d: )
-		first=$(expr $first - 1)
-
-		if [ -n $first ]; then
-			last=$[first+2]
-			sed -i "${first},${last}d" $PRGNAM.SlackBuild
-		fi
+		sed -i '/cp -a/{N;N;/<documentation>/d}' $PRGNAM.SlackBuild
 	fi
 
-
-	if [[ -n $SRCNAM ]]; then
-		sed -i "s%@SRCNAM@%${SRCNAM}%g" $PRGNAM.SlackBuild
+	if [ -n "$SRCNAM" ]; then
+		sed -i "s%@SRCNAM@%$SRCNAM%g" $PRGNAM.SlackBuild
 	fi
-	sed -i "s%@PRGNAM@%${PRGNAM}%g" $PRGNAM.SlackBuild
-	sed -i "s%@VERSION@%${VERSION}%g" $PRGNAM.SlackBuild
-	sed -i "s%@ARCHIVE@%$ARCHIVE%g" $PRGNAM.SlackBuild
-	sed -i "s%@NAME@%${NAME}%g" $PRGNAM.SlackBuild
-	sed -i "s%@EMAIL@%${EMAIL}%g" $PRGNAM.SlackBuild
-	sed -i "s%@TAG@%${TAG}%g" $PRGNAM.SlackBuild
-	sed -i "s%@TMP@%$TAG%g" $PRGNAM.SlackBuild
+	sed -i "
+		s%@PRGNAM@%$PRGNAM%g
+		s%@VERSION@%$VERSION%g
+		s%@ARCHIVE@%$ARCHIVE%g
+		s%@NAME@%$NAME%g
+		s%@EMAIL@%$EMAIL%g
+		s%@TAG@%$TAG%g
+		s%@TMP@%$TAG%g
+		" $PRGNAM.SlackBuild
 
 	printf "SlackBuild built.\n"
 
-	if [[ $KEEPBACKUPS == "YES" ]]; then
-		for n in $(seq 4 -1 1)
-		{
+	if [ "$KEEPBACKUPS" = "YES" ]; then
+		for n in $(seq 4 -1 1); do
 			if [ -r doinst.sh.$n ]; then
-				mv -f doinst.sh.$n doinst.sh.$[n+1]
+				mv -f doinst.sh.$n doinst.sh.$(($n+1))
 			fi
-		}
+		done
 		if [ -r doinst.sh ]; then
 			mv -f doinst.sh doinst.sh.1
 		fi
 	fi
 
-	if [[ -n $(echo $FULLCONTENTS | grep $PRGNAM.desktop) ]]; then
+	if echo $FULLCONTENTS | grep -q $PRGNAM.desktop; then
 		printf "Desktop file found. Editing doinst.sh.\n"
 cat << EOF > $CWD/doinst.sh
 # We'll assume that a desktop file also indicates an icon
@@ -216,7 +232,7 @@ cat << EOF > $CWD/doinst.sh
 EOF
 	fi
 
-	if [[ -n $(echo $FULLCONTENTS | grep $PRGNAM.xml) ]]; then
+	if echo $FULLCONTENTS | grep -q $PRGNAM.xml; then
 		printf "Looks like a mimetype file. Editing doinst.sh.\n"
 cat << EOF >> $CWD/doinst.sh
 # Looks like a mimetype file.
@@ -232,9 +248,12 @@ EOF
 		sed -i '/cat $CWD\/doinst.sh/d' $PRGNAM.SlackBuild
 	fi
 
-	if [[ $SOURCE_DIR != $PRGNAM-$VERSION && $SOURCE_DIR != $SRCNAM-$VERSION ]]; then
-		printf $bred"Archive source output directory does not match archive name.\n"
-		printf $bred"You will need to adjust the SlackBuild by hand to account for this.\n"
+	if [ "$SOURCE_DIR" != "$PRGNAM-$VERSION" ] &&
+			[ "$SOURCE_DIR" != "$SRCNAM-$VERSION" ]; then
+		printf $bred"Archive source output directory does not match "
+		printf "archive name.\n"
+		printf $bred"You will need to adjust the SlackBuild by hand "
+		printf "to account for this.\n"
 		printf $normal
 #		printf $normal"Exiting now.\n"
 #		exit 1
