@@ -129,7 +129,7 @@ validate_cfg() {
 			printf "$MISSING\n" >&2
 		fi
 		if [ -n "$UNDERSCORE" ]; then
-			printf "$UNDERSCORE" >&2
+			printf "$UNDERSCORE\n" >&2
 		fi
 		return 1
 	fi
@@ -208,16 +208,7 @@ common() {
 
 	printf "SlackBuild generated.\n"
 
-	if [ "$KEEPBACKUPS" = "YES" ]; then
-		for n in $(seq 4 -1 1); do
-			if [ -r doinst.sh.$n ]; then
-				mv -f doinst.sh.$n doinst.sh.$(($n+1))
-			fi
-		done
-		if [ -r doinst.sh ]; then
-			mv -f doinst.sh doinst.sh.1
-		fi
-	fi
+	backup doinst.sh
 
 	if echo $FULLCONTENTS | grep -q $PRGNAM.desktop; then
 		printf "Desktop file found. Editing doinst.sh.\n"
@@ -355,19 +346,10 @@ pick_template() {
 
 	TEMPLATE=$BUILDTYPE-template.SlackBuild
 
-	if [ "$KEEPBACKUPS" = "YES" ]; then
-		for n in $(seq 4 -1 1); do
-			if [ -r $PRGNAM.SlackBuild.$n ]; then
-				mv -f $PRGNAM.SlackBuild.$n $PRGNAM.SlackBuild.$(($n+1))
-			fi
-		done
-		if [ -r $PRGNAM.SlackBuild ]; then
-			mv -f $PRGNAM.SlackBuild $PRGNAM.SlackBuild.1
-		fi
-	fi
-
+	backup $PRGNAM.SlackBuild
 	cat $TEMPLATES/$TEMPLATE > $PRGNAM.SlackBuild
 	chmod +x $PRGNAM.SlackBuild
+
 	$BUILDTYPE # function call
 }
 
@@ -386,23 +368,7 @@ build() {
 }
 
 make_files() {
-	if [ "$KEEPBACKUPS" = "YES" ]; then
-		for n in $(seq 4 -1 1); do
-			if [ -r $PRGNAM.info.$n ]; then
-				mv -f $PRGNAM.info.$n $PRGNAM.info.$(($n+1))
-			fi
-			if [ -r slack-desc.$n ]; then
-				mv -f slack-desc.$n slack-desc.$(($n+1))
-			fi
-		done
-		if [ -r $PRGNAM.info ]; then
-			mv -f $PRGNAM.info $PRGNAM.info.1
-		fi
-		if [ -r slack-desc ]; then
-			mv -f slack-desc slack-desc.1
-		fi
-	fi
-
+	backup $PRGNAM.info slack-desc
 	cat $TEMPLATES/template.info > $PRGNAM.info
 	cat $TEMPLATES/slack-desc > slack-desc
 
@@ -447,6 +413,21 @@ check_version() {
 		printf "Newer version available: $latest\n"
 	elif [ "$latest" = "$SCRIPTVERSION" ]; then
 		printf "No newer version available.\n"
+	fi
+}
+
+backup() {
+	if [ "$KEEPBACKUPS" = "YES" ]; then
+		for FILE in "$@"; do
+			for n in $(seq 4 -1 1); do
+				if [ -r $FILE.$n ]; then
+					mv -f $FILE.$n $FILE.$(($n+1))
+				fi
+			done
+			if [ -r $FILE ]; then
+				mv -f $FILE $FILE.1
+			fi
+		done
 	fi
 }
 
