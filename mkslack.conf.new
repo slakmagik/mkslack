@@ -3,7 +3,7 @@
 
 NAME=""
 EMAIL=""
-TAG="${TAG:-SBo}"
+TAG="${TAG:-_SBo}"
 KEEPBACKUPS="YES"
 
 # vim:set syn=sh:

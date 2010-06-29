@@ -115,8 +115,8 @@ validate_cfg() {
 		MISSING="NAME $MISSING"
 	fi
 
-	if echo $TAG | grep -q '^_'; then
-		UNDERSCORE="TAG has an invalid leading underscore."
+	if ! echo $TAG | grep -q '^_'; then
+		UNDERSCORE="TAG is missing the required underscore."
 		if [ -n "$MISSING" ]; then
 			UNDERSCORE="Additionally, $UNDERSCORE"
 		fi
@@ -144,8 +144,8 @@ parse_archive() {
 	fi
 
 	ARCHIVE=$(echo $BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
-	if [ ${ARCHIVE##*.} = "tgz" ]; then ARCHIVE=tgz; fi
-	if [ ${ARCHIVE##*.} = "zip" ]; then ARCHIVE=zip; fi
+	if [ "${ARCHIVE##*.}" = "tgz" ]; then ARCHIVE=tgz; fi
+	if [ "${ARCHIVE##*.}" = "zip" ]; then ARCHIVE=zip; fi
 	VERSION=$(echo $BASENAME | awk -F - '{print $NF}' |
 		sed "s/$ARCHIVE//;s/.$//")
 	PRGNAM=$(echo $BASENAME | sed "s/-$VERSION//;s/$ARCHIVE//;s/.$//")
@@ -203,7 +203,7 @@ common() {
 		s%@NAME@%$NAME%g
 		s%@EMAIL@%$EMAIL%g
 		s%@TAG@%$TAG%g
-		s%@TMP@%$TAG%g
+		s%@TMP@%${TAG#_}%g
 		" $PRGNAM.SlackBuild
 
 	printf "SlackBuild generated.\n"
@@ -277,7 +277,11 @@ autotools() {
 		printf "Adding autoreconf -i --force\n"
 		sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
 	fi
+	rm_man_info
+	common
+}
 
+rm_man_info() {
 	# Remove man page lines if not needed
 	if ! echo $TOPCONTENTS | grep -q man/; then
 		printf "No man directory found. Removing from SlackBuild.\n"
@@ -290,7 +294,6 @@ autotools() {
 		sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
 	fi
 	sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
-	common
 }
 
 perl() {
@@ -312,6 +315,7 @@ python() {
 }
 
 cmake() {
+	rm_man_info
 	common
 }
 
@@ -351,7 +355,7 @@ pick_template() {
 
 	TEMPLATE=$BUILDTYPE-template.SlackBuild
 
-	if [ $KEEPBACKUPS = "YES" ]; then
+	if [ "$KEEPBACKUPS" = "YES" ]; then
 		for n in $(seq 4 -1 1); do
 			if [ -r $PRGNAM.SlackBuild.$n ]; then
 				mv -f $PRGNAM.SlackBuild.$n $PRGNAM.SlackBuild.$(($n+1))
@@ -368,14 +372,14 @@ pick_template() {
 }
 
 build() {
-	if [ $UID -ne 0 ]; then
+	if [ "$(id -u)" -ne 0 ]; then
 		printf "You need to be root to run the SlackBuild\n" >&2
 		exit 1
 	fi
 
 	sh $PRGNAM.SlackBuild
 
-	if [ -n $INSTALL ]; then
+	if [ -n "$INSTALL" ]; then
 		upgradepkg --reinstall --install-new \
 			$PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
 	fi
@@ -402,7 +406,7 @@ make_files() {
 	cat $TEMPLATES/template.info > $PRGNAM.info
 	cat $TEMPLATES/slack-desc > slack-desc
 
-	blank=$(echo $PRGNAM | tr "$PRGNAM" " ")
+	blank=$(echo $PRGNAM | tr [:graph:] " ")
 	sed -i "
 		s%       |%$blank|%
 		s%appname%$PRGNAM%g
