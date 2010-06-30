@@ -351,10 +351,10 @@ pick_template() {
 
 fix_build_errors() {
 	if [ -d $PKG/usr/share/man ]; then
-		printf "Moving $PKG/usr/share/man pages to $PKG/usr/man.\n"
-		sed '/find $PKG.usr.man -type f/i\mv $PKG/usr/share/man $PKG/usr' \
+		printf "Found man pages in $PKG/usr/share/man. Fixing.\n"
+		sed -i '/find $PKG.usr.man -type f/i\mv $PKG/usr/share/man $PKG/usr' \
 			$PRGNAM.SlackBuild
-		mv $PKG/usr/share/man $PKG/usr
+		mkdir $PKG/usr/man
 	fi
 
 	if [ ! -d $PKG/usr/man ]; then
