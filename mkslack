@@ -29,7 +29,7 @@
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.2
+SCRIPTVERSION=3.3rc3
 if [ -z "$ARCH" ]; then
   case "$( uname -m )" in
     i?86) ARCH=i486 ;;
@@ -95,7 +95,7 @@ DOCS="SomeFile" mkslack ARCHIVE
 This will add 'SomeFile' to the list. You can also edit the DOCS list in
 this script. Any that it doesn't find will be removed from the list.
 
-Similarly, BUILD (default=1), ARCH (default=i486), and TAG (default=SBo) can
+Similarly, BUILD (default=1), ARCH (default=i486), and TAG (default=_SBo) can
 be specified by:
 VARIABLE=VALUE mkslack [OPTIONS] ARCHIVE
 EOF
@@ -118,21 +118,12 @@ validate_cfg() {
 		MISSING="ERRORACTION $MISSING"
 	fi
 
-	if ! echo $TAG | grep -q '^_'; then
-		UNDERSCORE="TAG is missing the required underscore."
-		if [ -n "$MISSING" ]; then
-			UNDERSCORE="Additionally, $UNDERSCORE"
-		fi
-	fi
 
-	if [ -n "$MISSING" ] || [ -n "$UNDERSCORE" ]; then
+	if [ -n "$MISSING" ]; then
 		printf "$SCRIPT: configuration file error(s):\n" >&2
 		if [ -n "$MISSING" ]; then
 			printf "the following variable(s) are not properly set:\n" >&2
 			printf "$MISSING\n" >&2
-		fi
-		if [ -n "$UNDERSCORE" ]; then
-			printf "$UNDERSCORE\n" >&2
 		fi
 		return 1
 	fi
@@ -472,6 +463,7 @@ version() {
 check_version() {
 	CKVER_CMD="finger @dawoodfall.net"
 
+	printf "$SCRIPT: version $SCRIPTVERSION\n"
 	printf "$SCRIPT: checking for newer version by $CKVER_CMD ...\n"
 	latest=$($CKVER_CMD | awk '/mkslack/{print $2}')
 	if [ -z "$latest" ]; then
