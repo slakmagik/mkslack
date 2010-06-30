@@ -257,7 +257,7 @@ EOF
 		printf $bred"You will need to adjust the SlackBuild by hand "
 		printf "to account for this.\n"
 		printf $normal
-		_BUILD=""
+		unset _BUILD
 	fi
 }
 
@@ -290,22 +290,7 @@ rm_info() {
 rm_special() {
 	# Remove special files line if not needed
 	printf "No special files found. Removing from SlackBuild.\n"
-	sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
-}
-
-rm_man_info() {
-	# Remove man page lines if not needed
-	if ! echo $TOPCONTENTS | grep -q man/; then
-		printf "No man directory found. Removing from SlackBuild.\n"
-		sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
-	fi
-
-	# Remove info page lines if not needed
-	if ! echo $TOPCONTENTS | grep info/; then
-		printf "No info directory found. Removing from SlackBuild.\n"
-		sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
-	fi
-	sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
+	sed -i '/^find $PKG -name perllocal.pod/,/^$/d' $PRGNAM.SlackBuild
 }
 
 perl() {
@@ -376,8 +361,8 @@ pick_template() {
 fix_build_errors() {
 	if [ -d $PKG/usr/share/man ]; then
 		printf "Moving $PKG/usr/share/man pages to $PKG/usr/man.\n"
-		n=$(grep -n 'find $PKG/usr/man -type f' $PRGNAM.SlackBuild | cut -d: -f1)
-		sed -i "$n imv \$PKG/usr/share/man \$PKG/usr" $PRGNAM.SlackBuild
+		sed '/find $PKG.usr.man -type f/i\mv $PKG/usr/share/man $PKG/usr' \
+			$PRGNAM.SlackBuild
 		mv $PKG/usr/share/man $PKG/usr
 	fi
 
@@ -389,7 +374,9 @@ fix_build_errors() {
 		rm_info
 	fi
 
-	if [ ! $(find $PKG -name perllocal.pod -o -name ".packlist" -o -name "*.bs") ]; then
+	if [ -z "$(find $PKG \
+			-name perllocal.pod -o -name ".packlist" -o -name "*.bs" \
+			2>/dev/null)" ]; then
 		rm_special
 	fi
 
@@ -404,33 +391,41 @@ build() {
 		exit 1
 	fi
 
-	sh $PRGNAM.SlackBuild 2> $PKGTMP/mkslack-error.log
+	# I knew pipefail would do what I wanted but that it was a bashism and
+	# that a command list and storage of $? would be the answer but had
+	# trouble juggling the file descriptors, so I found and modified this from
+	# http://osdir.com/ml/libvir-list/2010-06/msg00095.html
 
-	if [ $? = 1 ]; then
+	# set -o pipefail is a bashism; this use of exec is the POSIX alternative
+	exec 3>&1
+	rc=$(
+		exec 4>&1 >&3
+		{ sh $PRGNAM.SlackBuild 2>&1; echo $? >&4; } |
+			tee -a $PKGTMP/mkslack-error.log
+	)
+	exec 3>&-
+
+	if [ "$rc" -eq 1 ]; then
 		ERROR=$(tail -n 1 $PKGTMP/mkslack-error.log)
-		echo $ERROR
 
-		if [[ -z $(echo $ERROR | grep "No such file or directory" \
-			| grep -e "usr/info" -e "usr/man") ]]; then
-			printf "Unknown error. Exiting.\n" >&2
-			exit 1
-		else
-
+		if echo $ERROR |
+				egrep -q "/usr/(info|man).*No such file or directory"; then
 			if [ $ERRORACTION = "PROMPT" ]; then
-				printf "Do you want me to adjust the SlackBuild and retry building it? y/n "
-				read
+				printf "Do you want me to adjust the SlackBuild and retry "
+				printf "building it? [y/N]: "
+				read REPLY
 				case $REPLY in
-					y|Y) fix_build_errors
-					;;
-					*)
-					exit 1
-					;;
+					y|Y) fix_build_errors ;;
+					*) exit 1 ;;
 				esac
 			elif [ $ERRORACTION = "AUTO" ]; then
 				fix_build_errors
 			elif [ $ERRORACTION = "EXIT" ]; then
 				exit 1
 			fi
+		else
+			printf "Unknown error.\n" >&2
+			exit 1
 		fi
 	fi
 
