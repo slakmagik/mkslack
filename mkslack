@@ -29,7 +29,7 @@
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.3rc3
+SCRIPTVERSION=3.3rc4
 if [ -z "$ARCH" ]; then
   case "$( uname -m )" in
     i?86) ARCH=i486 ;;
@@ -281,7 +281,7 @@ rm_info() {
 rm_special() {
 	# Remove special files line if not needed
 	printf "No special files found. Removing from SlackBuild.\n"
-	sed -i '/^find $PKG -name perllocal.pod/,/^$/d' $PRGNAM.SlackBuild
+	sed -i '/^find $PKG -name "perllocal.pod"/,/^$/d' $PRGNAM.SlackBuild
 }
 
 perl() {
@@ -350,14 +350,16 @@ pick_template() {
 }
 
 fix_build_errors() {
+	unset FOUNDMAN
+
 	if [ -d $PKG/usr/share/man ]; then
 		printf "Found man pages in $PKG/usr/share/man. Fixing.\n"
 		sed -i '/find $PKG.usr.man -type f/i\mv $PKG/usr/share/man $PKG/usr' \
 			$PRGNAM.SlackBuild
-		mkdir $PKG/usr/man
+		FOUNDMAN=1
 	fi
 
-	if [ ! -d $PKG/usr/man ]; then
+	if [ ! -d $PKG/usr/man ] || [ -z "$FOUNDMAN" ]; then
 		rm_man
 	fi
 
