@@ -1,3 +1,27 @@
+Wed 30 Jun 2010 19:39:47 BST
+Version 3.3rc4
+Small bugfix.
++--------------------------+
+Wed 30 Jun 2010 17:28:31 BST
+Version 3.3rc3
+Cleaned up message for usr/share/man pages found.
++--------------------------+
+Wed 30 Jun 2010 09:54:37 BST
+Version 3.3rc2
+Reverted back to not needing an underscore for TAG.
++--------------------------+
+Wed 30 Jun 2010 09:07:19 BST
+Version 3.3rc1
+Incorporated slakmagik's nice, new code.
+-r is now -b (for build)
+A new -V for version check.
+With -b you get the choice of having a failed build fixed and
+rebuilt. Mostly for manpage/info errors. A new config option
+ERRORACTION to do this, which can be PROMPT, AUTO or EXIT.
+Now config file errors are reported back.
+Now TAG _must_ have a preceding underscore, which keeps it in
+line with slackbuilds.
++--------------------------+
 Sun 27 Jun 2010 16:28:32 BST
 Version 3.1
 Fixed ARCH bug.

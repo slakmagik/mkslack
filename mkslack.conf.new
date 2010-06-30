@@ -1,9 +1,10 @@
 # Just a few details to edit here
-# TAG should not include a preceding '_'
+# TAG should include a preceding '_'
 
 NAME=""
 EMAIL=""
 TAG="${TAG:-_SBo}"
 KEEPBACKUPS="YES"
+ERRORACTION="PROMPT"
 
 # vim:set syn=sh:
