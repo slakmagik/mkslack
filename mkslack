@@ -114,9 +114,9 @@ validate_cfg() {
 	if [ -z "$NAME" ]; then
 		MISSING="NAME $MISSING"
 	fi
-    if [ -z "$ERRORACTION" ]; then
-        MISSING="ERRORACTION $MISSING"
-    fi
+	if [ -z "$ERRORACTION" ]; then
+		MISSING="ERRORACTION $MISSING"
+	fi
 
 	if ! echo $TAG | grep -q '^_'; then
 		UNDERSCORE="TAG is missing the required underscore."
@@ -158,8 +158,8 @@ parse_archive() {
 	FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null)
 	TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
 	SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
-    TMP=$PKGTMP/${TAG#_}
-    PKG=$TMP/package-$PRGNAM
+	TMP=$PKGTMP/${TAG#_}
+	PKG=$TMP/package-$PRGNAM
 }
 
 common() {
@@ -276,24 +276,23 @@ autotools() {
 }
 
 rm_man() {
-    # Remove man page lines if not needed
-    printf "No man directory found. Removing from SlackBuild.\n"
-    sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
-
+	# Remove man page lines if not needed
+	printf "No man directory found. Removing from SlackBuild.\n"
+	sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
 }
 
 rm_info() {
-    # Remove info page lines if not needed
-    printf "No info directory found. Removing from SlackBuild.\n"
-    sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
+	# Remove info page lines if not needed
+	printf "No info directory found. Removing from SlackBuild.\n"
+	sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
 }
 
 rm_special() {
-    # Remove special files line if not needed
-    printf "No special files found. Removing from SlackBuild.\n"
-    sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
+	# Remove special files line if not needed
+	printf "No special files found. Removing from SlackBuild.\n"
+	sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
 }
- 
+
 rm_man_info() {
 	# Remove man page lines if not needed
 	if ! echo $TOPCONTENTS | grep -q man/; then
@@ -312,7 +311,7 @@ rm_man_info() {
 perl() {
 	makefile=$(echo "$TOPCONTENTS" | grep -i makefile.pl)
 	build=$(echo "$TOPCONTENTS" | grep -i build.pl)
-	
+
 	if [ -n "$makefile" ]; then
 		sed -i "s/Makefile.PL/$makefile/" $PRGNAM.SlackBuild
 		sed -i '/perl Build.PL/,/^$/d' $PRGNAM.SlackBuild
@@ -375,28 +374,28 @@ pick_template() {
 }
 
 fix_build_errors() {
-    if [ -d $PKG/usr/share/man ]; then
-        printf "Moving $PKG/usr/share/man pages to $PKG/usr/man.\n"
-        n=$(grep -n 'find $PKG/usr/man -type f' $PRGNAM.SlackBuild | cut -d: -f1)
-        sed -i "$n imv \$PKG/usr/share/man \$PKG/usr" $PRGNAM.SlackBuild
-        mv $PKG/usr/share/man $PKG/usr
-    fi
+	if [ -d $PKG/usr/share/man ]; then
+		printf "Moving $PKG/usr/share/man pages to $PKG/usr/man.\n"
+		n=$(grep -n 'find $PKG/usr/man -type f' $PRGNAM.SlackBuild | cut -d: -f1)
+		sed -i "$n imv \$PKG/usr/share/man \$PKG/usr" $PRGNAM.SlackBuild
+		mv $PKG/usr/share/man $PKG/usr
+	fi
 
-    if [ ! -d $PKG/usr/man ]; then
-        rm_man
-    fi
+	if [ ! -d $PKG/usr/man ]; then
+		rm_man
+	fi
 
-    if [ ! -d $PKG/usr/info ]; then
-        rm_info
-    fi
+	if [ ! -d $PKG/usr/info ]; then
+		rm_info
+	fi
 
-    if [ ! $(find $PKG -name perllocal.pod -o -name ".packlist" -o -name "*.bs") ]; then
-        rm_special
-    fi
+	if [ ! $(find $PKG -name perllocal.pod -o -name ".packlist" -o -name "*.bs") ]; then
+		rm_special
+	fi
 
-    sleep 2
+	sleep 2
 
-    build
+	build
 }
 
 build() {
@@ -405,7 +404,7 @@ build() {
 		exit 1
 	fi
 
-	sh $PRGNAM.SlackBuild 2> $PKGTMP/mkslack-error.log 
+	sh $PRGNAM.SlackBuild 2> $PKGTMP/mkslack-error.log
 
 	if [ $? = 1 ]; then
 		ERROR=$(tail -n 1 $PKGTMP/mkslack-error.log)
@@ -435,7 +434,6 @@ build() {
 		fi
 	fi
 
-
 	if [ -n "$INSTALL" ]; then
 		upgradepkg --reinstall --install-new \
 			$PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
@@ -463,7 +461,7 @@ make_files() {
 	MD5SUM=$(md5sum $SRCNAM-$VERSION.$ARCHIVE | cut -d' ' -f1)
 
 	printf "md5sum of archive:\t$MD5SUM\n"
-	
+
 	if [ "$ARCH" = "i486" ] || [ "$ARCH" = "i686" ]; then
 		sed -i "s%@md5sum@%$MD5SUM%;s%@md5sum64@%%" $PRGNAM.info
 	elif [ "$ARCH" = "x86_64" ]; then
