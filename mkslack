@@ -114,6 +114,9 @@ validate_cfg() {
 	if [ -z "$NAME" ]; then
 		MISSING="NAME $MISSING"
 	fi
+    if [ -z "$ERRORACTION" ]; then
+        MISSING="ERRORACTION $MISSING"
+    fi
 
 	if ! echo $TAG | grep -q '^_'; then
 		UNDERSCORE="TAG is missing the required underscore."
@@ -155,6 +158,8 @@ parse_archive() {
 	FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null)
 	TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
 	SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
+    TMP=$PKGTMP/${TAG#_}
+    PKG=$TMP/package-$PRGNAM
 }
 
 common() {
@@ -252,8 +257,7 @@ EOF
 		printf $bred"You will need to adjust the SlackBuild by hand "
 		printf "to account for this.\n"
 		printf $normal
-#		printf $normal"Exiting now.\n"
-#		exit 1
+		_BUILD=""
 	fi
 }
 
@@ -268,10 +272,28 @@ autotools() {
 		printf "Adding autoreconf -i --force\n"
 		sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
 	fi
-	rm_man_info
 	common
 }
 
+rm_man() {
+    # Remove man page lines if not needed
+    printf "No man directory found. Removing from SlackBuild.\n"
+    sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
+
+}
+
+rm_info() {
+    # Remove info page lines if not needed
+    printf "No info directory found. Removing from SlackBuild.\n"
+    sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
+}
+
+rm_special() {
+    # Remove special files line if not needed
+    printf "No special files found. Removing from SlackBuild.\n"
+    sed -i '/^find $PKG -name "perllocal.pod"/d' $PRGNAM.SlackBuild
+}
+ 
 rm_man_info() {
 	# Remove man page lines if not needed
 	if ! echo $TOPCONTENTS | grep -q man/; then
@@ -306,7 +328,6 @@ python() {
 }
 
 cmake() {
-	rm_man_info
 	common
 }
 
@@ -353,13 +374,67 @@ pick_template() {
 	$BUILDTYPE # function call
 }
 
+fix_build_errors() {
+    if [ -d $PKG/usr/share/man ]; then
+        printf "Moving $PKG/usr/share/man pages to $PKG/usr/man.\n"
+        n=$(grep -n 'find $PKG/usr/man -type f' $PRGNAM.SlackBuild | cut -d: -f1)
+        sed -i "$n imv \$PKG/usr/share/man \$PKG/usr" $PRGNAM.SlackBuild
+        mv $PKG/usr/share/man $PKG/usr
+    fi
+
+    if [ ! -d $PKG/usr/man ]; then
+        rm_man
+    fi
+
+    if [ ! -d $PKG/usr/info ]; then
+        rm_info
+    fi
+
+    if [ ! $(find $PKG -name perllocal.pod -o -name ".packlist" -o -name "*.bs") ]; then
+        rm_special
+    fi
+
+    sleep 2
+
+    build
+}
+
 build() {
 	if [ "$(id -u)" -ne 0 ]; then
 		printf "You need to be root to run the SlackBuild\n" >&2
 		exit 1
 	fi
 
-	sh $PRGNAM.SlackBuild
+	sh $PRGNAM.SlackBuild 2> $PKGTMP/mkslack-error.log 
+
+	if [ $? = 1 ]; then
+		ERROR=$(tail -n 1 $PKGTMP/mkslack-error.log)
+		echo $ERROR
+
+		if [[ -z $(echo $ERROR | grep "No such file or directory" \
+			| grep -e "usr/info" -e "usr/man") ]]; then
+			printf "Unknown error. Exiting.\n" >&2
+			exit 1
+		else
+
+			if [ $ERRORACTION = "PROMPT" ]; then
+				printf "Do you want me to adjust the SlackBuild and retry building it? y/n "
+				read
+				case $REPLY in
+					y|Y) fix_build_errors
+					;;
+					*)
+					exit 1
+					;;
+				esac
+			elif [ $ERRORACTION = "AUTO" ]; then
+				fix_build_errors
+			elif [ $ERRORACTION = "EXIT" ]; then
+				exit 1
+			fi
+		fi
+	fi
+
 
 	if [ -n "$INSTALL" ]; then
 		upgradepkg --reinstall --install-new \
