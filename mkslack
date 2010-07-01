@@ -29,7 +29,7 @@
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.3rc4
+SCRIPTVERSION=3.3rc5
 if [ -z "$ARCH" ]; then
   case "$( uname -m )" in
     i?86) ARCH=i486 ;;
@@ -359,7 +359,7 @@ fix_build_errors() {
 		FOUNDMAN=1
 	fi
 
-	if [ ! -d $PKG/usr/man ] || [ -z "$FOUNDMAN" ]; then
+	if [ ! -d $PKG/usr/man ] && [ -z "$FOUNDMAN" ]; then
 		rm_man
 	fi
 
@@ -437,7 +437,7 @@ make_files() {
 	sed -i "
 		s%       |%$blank|%
 		s%appname%$PRGNAM%g
-		9s/$PRGNAM:/$PRGNAM: $PRGNAM/
+		9s/$PRGNAM:/$PRGNAM: $PRGNAM ( ... )/
 		" slack-desc
 	sed -i "
 		s%@PRGNAM@%$PRGNAM%g
