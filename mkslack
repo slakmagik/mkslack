@@ -29,13 +29,13 @@
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.3rc5
+SCRIPTVERSION=3.7
 if [ -z "$ARCH" ]; then
-  case "$( uname -m )" in
-    i?86) ARCH=i486 ;;
-    arm*) ARCH=arm ;;
-       *) ARCH=$( uname -m ) ;;
-  esac
+	ARCH=$(uname -m)
+	case $ARCH in
+		i?86) ARCH=i486 ;;
+		arm*) ARCH=arm ;;
+	esac
 fi
 BUILD=${BUILD:-1}
 CWD=$(pwd)
@@ -140,17 +140,22 @@ parse_archive() {
 	ARCHIVE=$(echo $BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
 	if [ "${ARCHIVE##*.}" = "tgz" ]; then ARCHIVE=tgz; fi
 	if [ "${ARCHIVE##*.}" = "zip" ]; then ARCHIVE=zip; fi
+	if [ "${ARCHIVE##*.}" = "gem" ]; then ARCHIVE=gem; fi
 	VERSION=$(echo $BASENAME | awk -F - '{print $NF}' |
 		sed "s/$ARCHIVE//;s/.$//")
 	PRGNAM=$(echo $BASENAME | sed "s/-$VERSION//;s/$ARCHIVE//;s/.$//")
 	# for use in the SBo files when the source and program name will
 	# differ (e.g., prepending 'perl-' to perl packages
 	SRCNAM=$PRGNAM
-	FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null)
-	TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
+	if [[ $ARCHIVE != "gem" ]]; then
+		FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null)
+		TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
+	else
+		FULLCONTENTS=$(tar -x -O --file=$CWD/$SRCNAM-$VERSION.gem data.tar.gz | tar tz)
+	    TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
+	fi
 	SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
 	TMP=$PKGTMP/${TAG#_}
-	PKG=$TMP/package-$PRGNAM
 }
 
 common() {
@@ -162,11 +167,15 @@ common() {
 			FULLDOCS=$FULLDOCS$(echo $DOC | cut -d/ -f2)" "
 		done
 
-		if echo "$TOPCONTENTS" | grep -qw 'docs';then
+		if echo "$TOPCONTENTS" | grep -qx 'docs';then
 			FULLDOCS="$FULLDOCS docs"
 		fi
 
-		if echo "$TOPCONTENTS" | grep -qw 'DOCS';then
+		if echo "$TOPCONTENTS" | grep -qx 'doc';then
+			FULLDOCS="$FULLDOCS doc"
+		fi
+
+		if echo "$TOPCONTENTS" | grep -qx 'DOCS';then
 			FULLDOCS="$FULLDOCS DOCS"
 		fi
 
@@ -206,7 +215,7 @@ common() {
 
 	backup doinst.sh
 
-	if echo $FULLCONTENTS | grep -q $PRGNAM.desktop; then
+	if echo $FULLCONTENTS | grep -q -i -e $PRGNAM.desktop -e $SRCNAM.desktop; then
 		printf "Desktop file found. Editing doinst.sh.\n"
 cat << EOF > $CWD/doinst.sh
 # We'll assume that a desktop file also indicates an icon
@@ -225,7 +234,7 @@ cat << EOF > $CWD/doinst.sh
 EOF
 	fi
 
-	if echo $FULLCONTENTS | grep -q $PRGNAM.xml; then
+	if echo $FULLCONTENTS | grep -q -i -e $PRGNAM.xml -e $SRCNAM.xml; then
 		printf "Looks like a mimetype file. Editing doinst.sh.\n"
 cat << EOF >> $CWD/doinst.sh
 # Looks like a mimetype file.
@@ -242,6 +251,7 @@ EOF
 	fi
 
 	if [ "$SOURCE_DIR" != "$PRGNAM-$VERSION" ] &&
+		[ "$BUILDTYPE" != "rubygem" ] &&
 			[ "$SOURCE_DIR" != "$SRCNAM-$VERSION" ]; then
 		printf $bred"Archive source output directory does not match "
 		printf "archive name.\n"
@@ -250,20 +260,6 @@ EOF
 		printf $normal
 		unset _BUILD
 	fi
-}
-
-autotools() {
-	if [ -n "$autogen" ]; then
-		printf "No configure file found.\nFound autogen.sh\n"
-		sed -i "/^CFLAGS=/i\./autogen.sh" $PRGNAM.SlackBuild
-	fi
-
-	if [ -n "$autoconf" ]; then
-		printf "No configure file or autogen.sh found.\n"
-		printf "Adding autoreconf -i --force\n"
-		sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
-	fi
-	common
 }
 
 rm_man() {
@@ -282,6 +278,20 @@ rm_special() {
 	# Remove special files line if not needed
 	printf "No special files found. Removing from SlackBuild.\n"
 	sed -i '/^find $PKG -name "perllocal.pod"/,/^$/d' $PRGNAM.SlackBuild
+}
+
+autotools() {
+	if [ -n "$autogen" ]; then
+		printf "No configure file found.\nFound autogen.sh\n"
+		sed -i "/^CFLAGS=/i\./autogen.sh" $PRGNAM.SlackBuild
+	fi
+
+	if [ -n "$autoconf" ]; then
+		printf "No configure file or autogen.sh found.\n"
+		printf "Adding autoreconf -i --force\n"
+		sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
+	fi
+	common
 }
 
 perl() {
@@ -306,25 +316,39 @@ cmake() {
 	common
 }
 
+rubygem() {
+	common
+}
+
 pick_template() {
 	printf "$SCRIPT: looking to see what sort of template to use...\n"
 
 	if echo $TOPCONTENTS | grep -q CMakeLists.txt; then
 		printf "Looks like a cmake package.\n"
 		BUILDTYPE=cmake
+		PKG=$TMP/package-$PRGNAM
 	elif echo $TOPCONTENTS | grep -q setup.py; then
 		printf "Looks like a python package.\n"
 		SRCNAM=$PRGNAM
 		PRGNAM=python-$SRCNAM
+		PKG=$TMP/package-$PRGNAM
 		BUILDTYPE=python
 	elif echo $TOPCONTENTS | egrep -qi '(Makefile|Build).PL'; then
 		printf "Looks like a perl package.\n"
 		SRCNAM=$PRGNAM
 		PRGNAM=perl-$SRCNAM
+		PKG=$TMP/package-$PRGNAM
 		BUILDTYPE=perl
+    elif [[ $ARCHIVE == "gem" ]]; then
+        printf "Looks like a ruby package.\n"
+        SRCNAM=$PRGNAM
+        PRGNAM=rubygem-$SRCNAM
+        PKG=$TMP/package-$PRGNAM
+        BUILDTYPE=rubygem
 	else
 		printf "Looks like a standard autotools package.\n"
 		BUILDTYPE=autotools
+		PKG=$TMP/package-$PRGNAM
 		if ! echo "$TOPCONTENTS" | grep -q 'configure$'; then
 			if echo $TOPCONTENTS | grep -q 'autogen.sh'; then
 				autogen=YES
@@ -525,9 +549,4 @@ if [ -n "$_BUILD" ] || [ -n "$INSTALL" ]; then
 fi
 
 # }}}
-# FIXME: I never use tabs - the following modeline overrides my .vimrc so I
-# can comfortably edit this file without messing up the pre-existent tabs, but
-# needs to be removed.
-# vim:set ts=4 noet:
-# This one can be kept
 # vim:set fdm=marker nofen:

@@ -1,3 +1,30 @@
+Sun Jan 16 18:55:57 GMT 2011
+Version 3.7
+Added ruby support.
++--------------------------+
+Tue 09 Nov 2010 12:07:36 PM GMT
+Version 3.6
+Bugfix for docmuentation 
++--------------------------+
+Tue 21 Sep 2010 18:45:16 BST
+Version 3.5
+Added 'doc' as an option for documentation
++--------------------------+
+Mon 20 Sep 2010 08:28:24 BSTTue 07 Sep 2010 15:24:53 BST
+Version 3.4
+Changed .desktop and mimetype grep to case-insensitive.
+Added stock doinst.sh to templates for convenience.
++--------------------------+
+Version 3.3 finalised
++--------------------------+
+Thu 12 Aug 2010 06:35:28 BST
+Version 3.3rc8
+Small code improvements
++--------------------------+
+Sat 31 Jul 2010 20:59:50 BST
+Version 3.3rc6
+Small bugfix for $PKG with python/perl packages.
++--------------------------+
 Thu 01 Jul 2010 03:14:02 BST
 Version 3.3rc5
 Small bugfix.
