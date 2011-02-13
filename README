@@ -1,9 +1,9 @@
 mkslack - a SlackBuild generator script
-(C) David Woodfall 2010
+(C) David Woodfall 2010-11
 
 This slackbuild generator uses templates stored in /usr/share/mkslack/templates
 and a config file /etc/mkslack/mkslack.conf which you must edit for name,
-email, copyright etc.
+email, etc.
 
 Idea for use:
 
@@ -50,6 +50,6 @@ Otherwise it defaults to 1.
 
 ARCH can be specified by:
 ARCH=xxx mkslack <archive>
-It defaults to i486 the same as a regular SlackBuild.
+It defaults to auto-detecting the ARCH it's running under.
 
 TAG can also be specified.

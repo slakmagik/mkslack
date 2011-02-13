@@ -12,7 +12,7 @@
 .SH DESCRIPTION
 This slackbuild generator uses templates stored in /usr/share/mkslack/templates
 and a config file /etc/mkslack/mkslack.conf which you must edit for name, 
-email, copyright etc.
+email, etc.
 .PP
 Idea for use:
 .PP
@@ -37,10 +37,6 @@ Run SlackBuild after creation. Got root?
 .B
 \fB-i\fP \fB--install\fP
 Install the package after running.
-.TP
-.B
-\fB-l\fP \fB--list\fP
-Pipe \fIarchive\fP contents to /usr/bin/most and exit.
 .TP
 .B
 \fB-v\fP \fB--version\fP
@@ -73,7 +69,7 @@ Otherwise it defaults to 1.
 .PP
 ARCH can be specified by:
 ARCH=xxx \fBmkslack\fP <\fIarchive\fP>
-It defaults to i486 the same as a regular SlackBuild.
+It defaults to auto-detecting the ARCH it's running under.
 .PP
 TAG can also be specified.
 .SH AUTHORS
