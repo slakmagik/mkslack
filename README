@@ -21,11 +21,11 @@ Syntax:
 mkslack [options] <archive>
 
 Options:
--h --help     Usage.
--b --build    Run SlackBuild after creation. Got root?
--i --install  Install the package after running.
--v --version  Version of mkslack.
--V --ckver    Check for new version.
+-h, --help     Usage.
+-b, --build    Run SlackBuild after creation. Got root?
+-i, --install  Install the package after running.
+-v, --version  Version of mkslack.
+-V, --ckver    Check for new version.
 
 Config options:
 
