@@ -1,3 +1,7 @@
+Tue 08 Feb 2011 22:29:23 GMT
+Version 3.8
+Added support to auto-add year into slackbuilds.
++--------------------------+
 Sun Jan 16 18:55:57 GMT 2011
 Version 3.7
 Added ruby support.

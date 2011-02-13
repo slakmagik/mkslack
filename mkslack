@@ -4,8 +4,8 @@
 
 # Build system for generating SlackBuild scripts
 
-# Copyright 2010  David Woodfall <info@davidwoodfall.co.uk>
-# Modifications copyright 2010 slakmagik <slakmagik@gmail.com>
+# Copyright 2010-2011  David Woodfall <info@davidwoodfall.co.uk>
+# Modifications copyright 2010-2011 slakmagik <slakmagik@gmail.com>
 # All rights reserved.
 #
 # Redistribution and use of this script, with or without modification, is
@@ -29,7 +29,7 @@
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.7
+SCRIPTVERSION=3.8
 if [ -z "$ARCH" ]; then
 	ARCH=$(uname -m)
 	case $ARCH in
@@ -72,6 +72,7 @@ normal='\e[m\017'
 # }}}
 # {{{ Functions ==============================================================
 
+# {{{ usage
 usage() {
 cat << EOF
 $SCRIPT $SCRIPTVERSION - a SlackBuild generator script
@@ -100,7 +101,9 @@ be specified by:
 VARIABLE=VALUE mkslack [OPTIONS] ARCHIVE
 EOF
 }
+# }}}
 
+# {{{ config
 validate_cfg() {
 	if [ -z "$KEEPBACKUPS" ]; then
 		MISSING="KEEPBACKUPS $MISSING"
@@ -128,7 +131,9 @@ validate_cfg() {
 		return 1
 	fi
 }
+# }}}
 
+# {{{ parse archive
 parse_archive() {
 	BASENAME=${FILENAME##*/}
 
@@ -157,7 +162,9 @@ parse_archive() {
 	SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
 	TMP=$PKGTMP/${TAG#_}
 }
+# }}}
 
+# {{{ common function for all build types
 common() {
 	if [ -n "$DOCS" ]; then
 		printf "Generating documentation line ...\n"
@@ -201,11 +208,15 @@ common() {
 	if [ -n "$SRCNAM" ]; then
 		sed -i "s%@SRCNAM@%$SRCNAM%g" $PRGNAM.SlackBuild
 	fi
+
+	YEAR=$(date +"%Y")
+
 	sed -i "
 		s%@PRGNAM@%$PRGNAM%g
 		s%@VERSION@%$VERSION%g
 		s%@ARCHIVE@%$ARCHIVE%g
 		s%@NAME@%$NAME%g
+		s%@YEAR@%$YEAR%g
 		s%@EMAIL@%$EMAIL%g
 		s%@TAG@%$TAG%g
 		s%@TMP@%${TAG#_}%g
@@ -261,7 +272,9 @@ EOF
 		unset _BUILD
 	fi
 }
+# }}}
 
+# {{{ rm man/info/special
 rm_man() {
 	# Remove man page lines if not needed
 	printf "No man directory found. Removing from SlackBuild.\n"
@@ -279,7 +292,9 @@ rm_special() {
 	printf "No special files found. Removing from SlackBuild.\n"
 	sed -i '/^find $PKG -name "perllocal.pod"/,/^$/d' $PRGNAM.SlackBuild
 }
+# }}}
 
+# {{{ autotools/perl/python/gem/cmake functions
 autotools() {
 	if [ -n "$autogen" ]; then
 		printf "No configure file found.\nFound autogen.sh\n"
@@ -319,7 +334,9 @@ cmake() {
 rubygem() {
 	common
 }
+# }}}
 
+# {{{ discover template
 pick_template() {
 	printf "$SCRIPT: looking to see what sort of template to use...\n"
 
@@ -372,7 +389,9 @@ pick_template() {
 
 	$BUILDTYPE # function call
 }
+# }}}
 
+# {{{ build errors
 fix_build_errors() {
 	unset FOUNDMAN
 
@@ -401,7 +420,9 @@ fix_build_errors() {
 
 	build
 }
+# }}}
 
+# {{{ build
 build() {
 	if [ "$(id -u)" -ne 0 ]; then
 		printf "You need to be root to run the SlackBuild\n" >&2
@@ -451,7 +472,9 @@ build() {
 			$PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
 	fi
 }
+# }}}
 
+# {{{ create files
 make_files() {
 	backup $PRGNAM.info slack-desc
 	cat $TEMPLATES/template.info > $PRGNAM.info
@@ -481,7 +504,9 @@ make_files() {
 	fi
 	printf "Info and slack-desc generated.\n"
 }
+# }}}
 
+# {{{ version, check version, backups
 version() {
 	printf "$SCRIPT $SCRIPTVERSION\n"
 }
@@ -516,6 +541,7 @@ backup() {
 		done
 	fi
 }
+# }}}
 
 # }}}
 # {{{ Main ===================================================================
@@ -549,4 +575,4 @@ if [ -n "$_BUILD" ] || [ -n "$INSTALL" ]; then
 fi
 
 # }}}
-# vim:set fdm=marker nofen:
+# vim:set fdm=marker fen:
