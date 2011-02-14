@@ -10,73 +10,146 @@ mkslack \- a SlackBuild generator
 .I archive
 .\"=====================================================================
 .SH DESCRIPTION
-This slackbuild generator uses templates stored in
-/usr/share/mkslack/templates and a config file /etc/mkslack/mkslack.conf
-which you must edit for name, email, etc.
+.B Mkslack
+is a slackbuild generator which uses templates stored in
+.I /usr/\:share/\:mkslack/\:templates
+and a configuration file,
+.IR /etc/\:mkslack/\:mkslack.conf ,
+which you must edit to use your name, email, etc.
 .SS Idea for use:
-The initial slackbuild and info file are built by this script, and when
+Create a directory, download the archive of a package into it, and run
+.B mkslack
+on it.
+The initial slackbuild and info file are built by this script and, when
 a test build/install is done and working, the files should be tweaked by
-hand. Especially don't forget to fill in the rest of the details in the
-info. One thing to point out is that mkslack will overwrite these files
-if run again unless you set KEEPBACKUPS="YES" in the conf (default).
+hand.
+Especially don't forget to fill in the rest of the details in the info
+file.
+One thing to point out is that
+.B mkslack
+will overwrite these files if run again unless you keep the default
+``KEEPBACKUPS=\:"YES"'' in the configuration file.
 .PP
-This is only a starter kit! You ARE expected to edit the created files
-by hand afterwards to remove unnecesary parts!
+This is only a starter kit!
+You
+.B ARE
+expected to edit the created files by hand afterwards to remove
+unnecessary parts or add anything missing!
 .\"=====================================================================
 .SH OPTIONS
 .\"---------------------------------------------------------------------
 .TP
 .BR -h ", " --help
-Usage.
+Print the usage message to standard output.
 .\"---------------------------------------------------------------------
 .TP
 .BR -b ", " --build
-Run SlackBuild after creation. Got root?
+Run the SlackBuild after creation.
+Got root?
 .\"---------------------------------------------------------------------
 .TP
 .BR -i ", " --install
-Install the package after running.
+Install the package after running
+.BR mkslack .
 .\"---------------------------------------------------------------------
 .TP
 .BR -v ", " --version
-Version of \fBmkslack\fP.
+Print the version of
+.B mkslack
+to standard output.
 .\"---------------------------------------------------------------------
 .TP
 .BR -V ", " --ckver
-Check for new version.
+Check for a new version of
+.BR mkslack .
+(Requires
+.BR finger (1)
+and internet access.)
 .\"---------------------------------------------------------------------
-.SS Config Options
+.SS Configuration File Variables
 .PP
-NAME, EMAIL as they should appear in SlackBuild and info TAG should be
-your custom tag and defaults to _SBo
+.B NAME
+and
+.B EMAIL
+should be set to what should appear in the SlackBuild and info files.
+They default to empty strings and must be set to non-empty strings.
 .PP
-KEEPBACKUPS="YES|NO" up to 5 backups of SlackBuild and other files are
-kept. The higher the number, the older they are.
+.B TAG
+should be set to your custom tag (if any).
+It defaults to ``_SBo''.
 .PP
-ERRORACTION="PROMPT|AUTO|EXIT" what to do on build errors. Using AUTO or
-answering 'y' to the prompt will have the slackbuild adjusted for man
-and info pages and then rebuilt.
+.B KEEPBACKUPS
+may be set to ``YES'' or ``NO''.
+If set to ``YES'', up to 5 backups of SlackBuilds and other files will
+be kept.
+The higher the number, the older they are.
+It defaults to ``YES''.
+.PP
+.B ERRORACTION
+specifies what to do on build errors caused by non-Slackware-standard
+man or info pages and may be set to ``PROMPT'', ``AUTO'', or ``EXIT''.
+If set to ``AUTO'' or set to ``PROMPT'' and answering ``y'' to the
+resulting prompt,
+.B mkslack
+will adjust the SlackBuild to try to move the man and/or info pages from
+.I /usr/share/man
+to
+.I /usr/man
+and will rebuild.
+If set to ``EXIT'' or set to ``PROMPT'' and answering ``n'',
+.B mkslack
+will exit.
+It defaults to ``PROMPT''.
 .\"---------------------------------------------------------------------
-.SS CLI Options
+.SS Command Line Variables
 .PP
-The documents list in top level of source tree can be adjusted by command:
-DOCS="SomeFile" \fBmkslack\fP <\fIarchive\fP>
-This will add 'SomeFile' to the list. You can also edit the DOCS list in
-this script. Any that it doesn't find will be removed from the list.
+.BR DOCS ,
+.BR BUILD ,
+.BR ARCH ,
+and
+.B TAG
+can all be adjusted at runtime by prefixing an assignment to one or more
+of these variables on
+.BR mkslack 's
+command line.
 .PP
-Build can be specified by:
-BUILD=2 \fBmkslack\fP <\fIarchive\fP>
-Otherwise it defaults to 1.
+.B DOCS
+can adjust the list of documents in the top level of the source tree.
+For example:
+.IP
+.nf
+\fcDOCS=\fISomeFile\fP mkslack \fIarchive\fP
+.fi
 .PP
-ARCH can be specified by:
-ARCH=xxx \fBmkslack\fP <\fIarchive\fP>
-It defaults to auto-detecting the ARCH it's running under.
+This will add ``SomeFile'' to the list.
+For the default, see the assignment in
+.BR mkslack ,
+itself.
+Depending on
+.BR mkslack 's
+location and your privileges, you may also edit the
+.B DOCS
+list there.
+Any docs that aren't found will be removed from the list.
 .PP
-TAG can also be specified.
+.B BUILD
+can be used to increment the build number.
+If it is not set, it defaults to 1.
+.PP
+.B ARCH
+can be manually assigned.
+It defaults to the auto-detected value of the architecture
+.B mkslack
+is running under.
+.PP
+.B TAG
+can also be used to assign any value desired.
+It defaults to ``_SBo''.
 .\"=====================================================================
 .SH AUTHORS
 David Woodfall and slakmagik
 .\"=====================================================================
 .SH BUGS
-Maybe. Please send bug reports to dave@dawoodfall.net
+Maybe.
+Please send bug reports to dave@dawoodfall.net
 .\" vim:set tw=72:
