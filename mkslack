@@ -76,22 +76,21 @@ normal='\e[m\017'
 usage() {
 cat << EOF
 $SCRIPT $SCRIPTVERSION - a SlackBuild generator script
-(C) David Woodfall 2010
-(C) slakmagik 2010
+Copyright 2010-11 David Woodfall, slakmagik
 
 Syntax:
 
-mkslack [OPTIONS] ARCHIVE
+    mkslack [OPTIONS] ARCHIVE
 
 OPTIONS:
--h | --help		Print this message.
--b | --build		Build the package with the SlackBuild. Got root?
--i | --install		Install the package after building (implies -b).
--v | --version		Print version.
--V | --ckver		Check for an updated version.
+    -b, --build     Build the package with the SlackBuild. Got root?
+    -h, --help      Print this message.
+    -i, --install   Install the package after building (implies -b).
+    -V, --ckver     Check for an updated version.
+    -v, --version   Print version.
 
-The documents list in top level of source tree can be adjusted by giving the
-command:
+The documents list in the top level of the source tree can be adjusted by
+giving the command:
 DOCS="SomeFile" mkslack ARCHIVE
 This will add 'SomeFile' to the list. You can also edit the DOCS list in
 this script. Any that it doesn't find will be removed from the list.
@@ -106,6 +105,9 @@ EOF
 # {{{ config
 
 validate_cfg() {
+	if [ -z "$ERRORACTION" ]; then
+		MISSING="ERRORACTION $MISSING"
+	fi
 	if [ -z "$KEEPBACKUPS" ]; then
 		MISSING="KEEPBACKUPS $MISSING"
 	fi
@@ -118,10 +120,6 @@ validate_cfg() {
 	if [ -z "$NAME" ]; then
 		MISSING="NAME $MISSING"
 	fi
-	if [ -z "$ERRORACTION" ]; then
-		MISSING="ERRORACTION $MISSING"
-	fi
-
 
 	if [ -n "$MISSING" ]; then
 		printf "$SCRIPT: configuration file error(s):\n" >&2
@@ -566,11 +564,11 @@ fi
 
 until [ -z "$1" ]; do
 	case "$1" in
-		-h|--help) usage; exit ;;
 		-b|--build) _BUILD=1 ;;
+		-h|--help) usage; exit ;;
 		-i|--install) INSTALL=1 ;;
-		-v|--version) version; exit ;;
 		-V|--ckver) check_version; exit ;;
+		-v|--version) version; exit ;;
 		*) FILENAME="$1" ;;
 	esac
 	shift
