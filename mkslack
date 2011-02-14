@@ -157,7 +157,7 @@ parse_archive() {
 		TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
 	else
 		FULLCONTENTS=$(tar -x -O --file=$CWD/$SRCNAM-$VERSION.gem data.tar.gz | tar tz)
-	    TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
+		TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
 	fi
 	SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
 	TMP=$PKGTMP/${TAG#_}
@@ -233,15 +233,15 @@ cat << EOF > $CWD/doinst.sh
 # We'll assume that a desktop file also indicates an icon
 # But you should edit this as needed.
 
- if [ -x /usr/bin/update-desktop-database ]; then
-   /usr/bin/update-desktop-database -q usr/share/applications >/dev/null 2>&1
- fi
+if [ -x /usr/bin/update-desktop-database ]; then
+  /usr/bin/update-desktop-database -q usr/share/applications >/dev/null 2>&1
+fi
 
- if [ -e usr/share/icons/hicolor/icon-theme.cache ]; then
-   if [ -x /usr/bin/gtk-update-icon-cache ]; then
-     /usr/bin/gtk-update-icon-cache usr/share/icons/hicolor >/dev/null 2>&1
-   fi
- fi
+if [ -e usr/share/icons/hicolor/icon-theme.cache ]; then
+  if [ -x /usr/bin/gtk-update-icon-cache ]; then
+    /usr/bin/gtk-update-icon-cache usr/share/icons/hicolor >/dev/null 2>&1
+  fi
+fi
 
 EOF
 	fi
@@ -251,9 +251,9 @@ EOF
 cat << EOF >> $CWD/doinst.sh
 # Looks like a mimetype file.
 
- if [ -x /usr/bin/update-mime-database ]; then
-   /usr/bin/update-mime-database usr/share/mime >/dev/null 2>&1
- fi
+if [ -x /usr/bin/update-mime-database ]; then
+  /usr/bin/update-mime-database usr/share/mime >/dev/null 2>&1
+fi
 
 EOF
 	fi
@@ -360,12 +360,12 @@ pick_template() {
 		PRGNAM=perl-$SRCNAM
 		PKG=$TMP/package-$PRGNAM
 		BUILDTYPE=perl
-    elif [[ $ARCHIVE == "gem" ]]; then
-        printf "Looks like a ruby package.\n"
-        SRCNAM=$PRGNAM
-        PRGNAM=rubygem-$SRCNAM
-        PKG=$TMP/package-$PRGNAM
-        BUILDTYPE=rubygem
+	elif [[ $ARCHIVE == "gem" ]]; then
+		printf "Looks like a ruby package.\n"
+		SRCNAM=$PRGNAM
+		PRGNAM=rubygem-$SRCNAM
+		PKG=$TMP/package-$PRGNAM
+		BUILDTYPE=rubygem
 	else
 		printf "Looks like a standard autotools package.\n"
 		BUILDTYPE=autotools
@@ -391,7 +391,7 @@ pick_template() {
 	cat $TEMPLATES/$TEMPLATE > $PRGNAM.SlackBuild
 	chmod +x $PRGNAM.SlackBuild
 
-	$BUILDTYPE # function call
+	$BUILDTYPE # function call to {autotools,cmake,perl,python,rubygem}
 }
 
 # }}}
