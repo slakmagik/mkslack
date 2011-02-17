@@ -275,27 +275,6 @@ EOF
 }
 
 # }}}
-# {{{ rm man/info/special
-
-rm_man() {
-	# Remove man page lines if not needed
-	printf "No man directory found. Removing from SlackBuild.\n"
-	sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
-}
-
-rm_info() {
-	# Remove info page lines if not needed
-	printf "No info directory found. Removing from SlackBuild.\n"
-	sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
-}
-
-rm_special() {
-	# Remove special files line if not needed
-	printf "No special files found. Removing from SlackBuild.\n"
-	sed -i '/^find $PKG -name "perllocal.pod"/,/^$/d' $PRGNAM.SlackBuild
-}
-
-# }}}
 # {{{ autotools/perl/python/gem/cmake functions
 
 autotools() {
@@ -398,41 +377,48 @@ pick_template() {
 # {{{ build errors
 
 fix_build_errors() {
-	unset FOUNDMAN
-
 	if [ -d $PKG/usr/share/man ]; then
 		printf "Found man pages in $PKG/usr/share/man. Fixing.\n"
 		sed -i '/find $PKG.usr.man -type f/i\mv $PKG/usr/share/man $PKG/usr' \
 			$PRGNAM.SlackBuild
-		FOUNDMAN=1
+	elif [ ! -d $PKG/usr/man ]; then
+		printf "No man directory found. Removing from SlackBuild.\n"
+		sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
 	fi
 
-	if [ ! -d $PKG/usr/man ] && [ -z "$FOUNDMAN" ]; then
-		rm_man
+	if [ -d $PKG/usr/share/info ]; then
+		printf "Found info pages in $PKG/usr/share/info. Fixing.\n"
+		sed -i '/rm -f $PKG.usr.info.dir/i\mv $PKG/usr/share/info $PKG/usr' \
+			$PRGNAM.SlackBuild
+	elif [ ! -d $PKG/usr/info ]; then
+		printf "No info directory found. Removing from SlackBuild.\n"
+		sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
 	fi
 
-	if [ ! -d $PKG/usr/info ]; then
-		rm_info
-	fi
-
+	# Do this while we're here though it can't have actually caused a
+	# build error.
 	if [ -z "$(find $PKG \
 			-name perllocal.pod -o -name ".packlist" -o -name "*.bs" \
 			2>/dev/null)" ]; then
-		rm_special
+		printf "No perl cruft found. Removing perl cruft line from SlackBuild.\n"
+		sed -i '/^find $PKG -name "perllocal.pod"/,/^$/d' $PRGNAM.SlackBuild
 	fi
-
-	sleep 2
-
-	build
 }
 
 # }}}
 # {{{ build
 
 build() {
+	local ATTEMPTED_FIX=${ATTEMPTED_FIX:-1}
+
 	if [ "$(id -u)" -ne 0 ]; then
 		printf "You need to be root to run the SlackBuild\n" >&2
 		exit 1
+	fi
+
+	if [ "$ERRORACTION" = PROMPT ]; then
+		echo "Hit enter to continue."
+		read JUNK
 	fi
 
 	# I knew pipefail would do what I wanted but that it was a bashism and
@@ -450,21 +436,22 @@ build() {
 	exec 3>&-
 
 	if [ "$rc" -eq 1 ]; then
-		ERROR=$(tail -n 1 $PKGTMP/mkslack-error.log)
+		tail -n 1 $PKGTMP/mkslack-error.log |
+			egrep -q "/usr/(info|man).*No such file or directory"
+		ATTEMPT_FIX=$?
 
-		if echo $ERROR |
-				egrep -q "/usr/(info|man).*No such file or directory"; then
-			if [ $ERRORACTION = "PROMPT" ]; then
+		if [ $ATTEMPT_FIX -eq 0 ] && [ $ATTEMPTED_FIX -ne 0 ]; then
+			if [ $ERRORACTION = PROMPT ]; then
 				printf "Do you want me to adjust the SlackBuild and retry "
 				printf "building it? [y/N]: "
 				read REPLY
-				case $REPLY in
-					y|Y) fix_build_errors ;;
-					*) exit 1 ;;
-				esac
-			elif [ $ERRORACTION = "AUTO" ]; then
+                                REPLY=$(echo $REPLY | tr A-Z a-z)
+			fi
+			if [ $ERRORACTION = AUTO ] || [ $REPLY = y ]; then
 				fix_build_errors
-			elif [ $ERRORACTION = "EXIT" ]; then
+				ATTEMPTED_FIX=0
+				build
+			else
 				exit 1
 			fi
 		else
