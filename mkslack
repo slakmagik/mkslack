@@ -472,7 +472,7 @@ build() {
 make_files() {
 	backup $PRGNAM.info slack-desc
 	cat $TEMPLATES/template.info > $PRGNAM.info
-	cat $TEMPLATES/slack-desc > slack-desc
+	cat $TEMPLATES/template-slack-desc > slack-desc
 
 	blank=$(echo $PRGNAM | tr [:graph:] " ")
 	sed -i "
