@@ -1,3 +1,22 @@
+DATE
+Version X.X
+- Revised documentation.
+- '-h' prints flags in case-folded alphabetical order.
+- If config file variables are missing, the list is printed to
+  the user in config file order.
+- Fixed a bug where info dirs weren't getting moved from
+  /usr/share to /usr.
+- ERRORACTION now also has the effect of determining whether
+  mkslack is being run interactively - if so, mkslack will
+  prompt the user to continue when printing output so the user
+  can take their time reading it.
+- The slack-desc template was renamed to template-slack-desc.
+- Minor tweaks (mostly whitespace) to some template files.
+- Fixed a bug where md5sum values would sometimes be written
+  to the MD5SUM_x86_64 .info field or not at all rather than
+  to the MD5SUM field. If MD5SUM_x86_64 is actually required,
+  this will need to be manually moved to that field.
++--------------------------+
 Tue 08 Feb 2011 22:29:23 GMT
 Version 3.8
 Added support to auto-add year into slackbuilds.
