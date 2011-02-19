@@ -488,14 +488,9 @@ make_files() {
 		" $PRGNAM.info
 
 	MD5SUM=$(md5sum $SRCNAM-$VERSION.$ARCHIVE | cut -d' ' -f1)
-
 	printf "md5sum of archive:\t$MD5SUM\n"
 
-	if [ "$ARCH" = "i486" ] || [ "$ARCH" = "i686" ]; then
-		sed -i "s%@md5sum@%$MD5SUM%;s%@md5sum64@%%" $PRGNAM.info
-	elif [ "$ARCH" = "x86_64" ]; then
-		sed -i "s%@md5sum64@%$MD5SUM%;s%@md5sum@%%" $PRGNAM.info
-	fi
+	sed -i "s%@md5sum@%$MD5SUM%;s%@md5sum64@%%" $PRGNAM.info
 	printf "Info and slack-desc generated.\n"
 }
 
