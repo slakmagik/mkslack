@@ -24,10 +24,10 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 PRGNAM=mkslack
-VERSION=${VERSION:-3.8}
+VERSION=${VERSION:-4.0}
 ARCH=noarch
 BUILD=${BUILD:-1}
-TAG=${TAG:-_daw}
+TAG=${TAG:-daw}
 
 CWD=$(pwd)
 TMP=${TMP:-/tmp/daw}

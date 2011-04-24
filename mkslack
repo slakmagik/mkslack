@@ -29,13 +29,13 @@
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.8
+SCRIPTVERSION=4.0
 if [ -z "$ARCH" ]; then
-    ARCH=$(uname -m)
-    case $ARCH in
-        i?86) ARCH=i486 ;;
-        arm*) ARCH=arm ;;
-    esac
+	ARCH=$(uname -m)
+	case $ARCH in
+		i?86) ARCH=i486 ;;
+		arm*) ARCH=arm ;;
+	esac
 fi
 BUILD=${BUILD:-1}
 CWD=$(pwd)
@@ -43,28 +43,28 @@ PKGTMP=/tmp
 TEMPLATES=/usr/share/mkslack/templates
 CONFIG=/etc/mkslack/mkslack.conf
 DOCS="
-    $DOCS
-    AUTHORS
-    CHANGELOG
-    CHANGES
-    CODING_STYLE
-    COPYING
-    COPYRIGHT
-    CREDITS
-    ChangeLog
-    Changelog
-    CopyRight
-    Copyright
-    HACKING
-    INSTALL
-    LICENSE
-    MAINTAINERS
-    NEWS
-    README
-    THANKS
-    TODO
-    VERSION
-    "
+	$DOCS
+	AUTHORS
+	CHANGELOG
+	CHANGES
+	CODING_STYLE
+	COPYING
+	COPYRIGHT
+	CREDITS
+	ChangeLog
+	Changelog
+	CopyRight
+	Copyright
+	HACKING
+	INSTALL
+	LICENSE
+	MAINTAINERS
+	NEWS
+	README
+	THANKS
+	TODO
+	VERSION
+	"
 
 bred='\e[01;31m'
 normal='\e[m\017'
@@ -105,132 +105,131 @@ EOF
 # {{{ config
 
 validate_cfg() {
-    if [ -z "$ERRORACTION" ]; then
-        MISSING="ERRORACTION $MISSING"
-    fi
-    if [ -z "$KEEPBACKUPS" ]; then
-        MISSING="KEEPBACKUPS $MISSING"
-    fi
-    if [ -z "$TAG" ]; then
-        MISSING="TAG $MISSING"
-    fi
-    if [ -z "$EMAIL" ]; then
-        MISSING="EMAIL $MISSING"
-    fi
-    if [ -z "$NAME" ]; then
-        MISSING="NAME $MISSING"
-    fi
+	if [ -z "$ERRORACTION" ]; then
+		MISSING="ERRORACTION $MISSING"
+	fi
+	if [ -z "$KEEPBACKUPS" ]; then
+		MISSING="KEEPBACKUPS $MISSING"
+	fi
+	if [ -z "$TAG" ]; then
+		MISSING="TAG $MISSING"
+	fi
+	if [ -z "$EMAIL" ]; then
+		MISSING="EMAIL $MISSING"
+	fi
+	if [ -z "$NAME" ]; then
+		MISSING="NAME $MISSING"
+	fi
 
-    if [ -n "$MISSING" ]; then
-        printf "$SCRIPT: configuration file error(s):\n" >&2
-        if [ -n "$MISSING" ]; then
-            printf "the following variable(s) are not properly set:\n" >&2
-            printf "$MISSING\n" >&2
-        fi
-        return 1
-    fi
+	if [ -n "$MISSING" ]; then
+		printf "$SCRIPT: configuration file error(s):\n" >&2
+		if [ -n "$MISSING" ]; then
+			printf "the following variable(s) are not properly set:\n" >&2
+			printf "$MISSING\n" >&2
+		fi
+		return 1
+	fi
 }
 
 # }}}
 # {{{ parse archive
 
 parse_archive() {
-    BASENAME=${FILENAME##*/}
+	BASENAME=${FILENAME##*/}
 
-    if [ ! -f "$FILENAME" ]; then
-        printf "$SCRIPT: file not found.\n" >&2
-        return 1
-    fi
+	if [ ! -f "$FILENAME" ]; then
+		printf "$SCRIPT: file not found.\n" >&2
+		return 1
+	fi
 
-    ARCHIVE=$(echo $BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
-    if [ "${ARCHIVE##*.}" = "tgz" ]; then ARCHIVE=tgz; fi
-    if [ "${ARCHIVE##*.}" = "zip" ]; then ARCHIVE=zip; fi
-    if [ "${ARCHIVE##*.}" = "gem" ]; then ARCHIVE=gem; fi
-    VERSION=$(echo $BASENAME | awk -F - '{print $NF}' |
-        sed "s/$ARCHIVE//;s/.$//")
-    PRGNAM=$(echo $BASENAME | sed "s/-$VERSION//;s/$ARCHIVE//;s/.$//")
-    # for use in the SBo files when the source and program name will
-    # differ (e.g., prepending 'perl-' to perl packages
-    SRCNAM=$PRGNAM
-    if [[ $ARCHIVE != "gem" ]]; then
-        FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null)
-        TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
-    else
-        FULLCONTENTS=$(
-            tar -x -O --file=$CWD/$SRCNAM-$VERSION.gem data.tar.gz | tar tz
-        )
-        TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
-    fi
-    SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
-    TMP=$PKGTMP/${TAG#_}
+	ARCHIVE=$(echo $BASENAME | awk -F . '{print $(NF-1)"."$(NF)}')
+	if [ "${ARCHIVE##*.}" = "tgz" ]; then ARCHIVE=tgz; fi
+	if [ "${ARCHIVE##*.}" = "zip" ]; then ARCHIVE=zip; fi
+	if [ "${ARCHIVE##*.}" = "gem" ]; then ARCHIVE=gem; fi
+	VERSION=$(echo $BASENAME | awk -F - '{print $NF}' |
+		sed "s/$ARCHIVE//;s/.$//")
+	PRGNAM=$(echo $BASENAME | sed "s/-$VERSION//;s/$ARCHIVE//;s/.$//")
+	# for use in the SBo files when the source and program name will
+	# differ (e.g., prepending 'perl-' to perl packages
+	SRCNAM=$PRGNAM
+	if [[ $ARCHIVE != "gem" ]]; then
+		FULLCONTENTS=$(tar tf $PRGNAM-$VERSION.$ARCHIVE 2>/dev/null)
+		TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
+	else
+		FULLCONTENTS=$(tar -x -O --file=$CWD/$SRCNAM-$VERSION.gem data.tar.gz | tar tz)
+		TOPCONTENTS=$(echo "$FULLCONTENTS" | cut -d/ -f2)
+	fi
+	SOURCE_DIR=$(echo "$FULLCONTENTS" | cut -d/ -f1 | head -n 1)
+	TMP=$PKGTMP/${TAG#_}
 }
 
 # }}}
 # {{{ common function for all build types
 
 common() {
-    if [ -n "$DOCS" ]; then
-        printf "Generating documentation line ...\n"
+	if [ -n "$DOCS" ]; then
+		printf "Generating documentation line ...\n"
 
-        for i in $DOCS; do
-            DOC=$(echo "$TOPCONTENTS" | grep $i)
-            FULLDOCS=$FULLDOCS$(echo $DOC | cut -d/ -f2)" "
-        done
+		for i in $DOCS; do
+			DOC=$(echo "$TOPCONTENTS" | grep $i)
+			FULLDOCS=$FULLDOCS$(echo $DOC | cut -d/ -f2)" "
+		done
 
-        if echo "$TOPCONTENTS" | grep -qx 'docs';then
-            FULLDOCS="$FULLDOCS docs"
-        fi
+		if echo "$TOPCONTENTS" | grep -qx 'docs';then
+			FULLDOCS="$FULLDOCS docs"
+		fi
 
-        if echo "$TOPCONTENTS" | grep -qx 'doc';then
-            FULLDOCS="$FULLDOCS doc"
-        fi
+		if echo "$TOPCONTENTS" | grep -qx 'doc';then
+			FULLDOCS="$FULLDOCS doc"
+		fi
 
-        if echo "$TOPCONTENTS" | grep -qx 'DOCS';then
-            FULLDOCS="$FULLDOCS DOCS"
-        fi
+		if echo "$TOPCONTENTS" | grep -qx 'DOCS';then
+			FULLDOCS="$FULLDOCS DOCS"
+		fi
 
-        if echo "$TOPCONTENTS" | grep -q '.txt';then
-            FULLDOCS="$FULLDOCS *.txt"
-        fi
+		if echo "$TOPCONTENTS" | grep -q '.txt';then
+			FULLDOCS="$FULLDOCS *.txt"
+		fi
 
-        if echo "$TOPCONTENTS" | grep -q '.TXT';then
-            FULLDOCS="$FULLDOCS *.TXT"
-        fi
+		if echo "$TOPCONTENTS" | grep -q '.TXT';then
+			FULLDOCS="$FULLDOCS *.TXT"
+		fi
 
-        FULLDOCS=$(echo "$FULLDOCS" | tr -s " ")
+		FULLDOCS=$(echo "$FULLDOCS" | tr -s " ")
 
-        sed -i "s#<documentation>#$FULLDOCS#" $PRGNAM.SlackBuild
+		sed -i "s#<documentation>#$FULLDOCS#" $PRGNAM.SlackBuild
 
-        printf "%s%s\n" "Docs: " "$FULLDOCS"
-        printf "Extra documents should be specified on the command line "
-        printf "or added later.\n"
-    else
-        sed -i '/cp -a/{N;N;/<documentation>/d}' $PRGNAM.SlackBuild
-    fi
+		printf "%s%s\n" "Docs: " "$FULLDOCS"
+		printf "Extra documents should be specified on the command line "
+		printf "or added later.\n"
+	else
+		sed -i '/cp -a/{N;N;/<documentation>/d}' $PRGNAM.SlackBuild
+	fi
 
-    if [ -n "$SRCNAM" ]; then
-        sed -i "s%@SRCNAM@%$SRCNAM%g" $PRGNAM.SlackBuild
-    fi
+	if [ -n "$SRCNAM" ]; then
+		sed -i "s%@SRCNAM@%$SRCNAM%g" $PRGNAM.SlackBuild
+	fi
 
-    YEAR=$(date +"%Y")
+	YEAR=$(date +"%Y")
 
-    sed -i "
-        s%@PRGNAM@%$PRGNAM%g
-        s%@VERSION@%$VERSION%g
-        s%@ARCHIVE@%$ARCHIVE%g
-        s%@NAME@%$NAME%g
-        s%@YEAR@%$YEAR%g
-        s%@EMAIL@%$EMAIL%g
-        s%@TAG@%$TAG%g
-        s%@TMP@%${TAG#_}%g
-        " $PRGNAM.SlackBuild
+	sed -i "
+		s%@PRGNAM@%$PRGNAM%g
+		s%@VERSION@%$VERSION%g
+		s%@ARCHIVE@%$ARCHIVE%g
+		s%@NAME@%$NAME%g
+		s%@YEAR@%$YEAR%g
+		s%@EMAIL@%$EMAIL%g
+		s%@TAG@%$TAG%g
+		s%@TMP@%${TAG#_}%g
+		" $PRGNAM.SlackBuild
 
-    printf "SlackBuild generated.\n"
+	printf "SlackBuild generated.\n"
 
-    backup doinst.sh
+	backup doinst.sh
+        rm -f doinst.sh
 
-    if echo $FULLCONTENTS | grep -qie $PRGNAM.desktop -e $SRCNAM.desktop; then
-        printf "Desktop file found. Editing doinst.sh.\n"
+	if echo $FULLCONTENTS | grep -q -i -e $PRGNAM.desktop -e $SRCNAM.desktop; then
+		printf "Desktop file found. Editing doinst.sh.\n"
 cat << EOF > $CWD/doinst.sh
 # We'll assume that a desktop file also indicates an icon
 # But you should edit this as needed.
@@ -246,10 +245,10 @@ if [ -e usr/share/icons/hicolor/icon-theme.cache ]; then
 fi
 
 EOF
-    fi
+	fi
 
-    if echo $FULLCONTENTS | grep -qie $PRGNAM.xml -e $SRCNAM.xml; then
-        printf "Looks like a mimetype file. Editing doinst.sh.\n"
+	if echo $FULLCONTENTS | grep -q -i -e $PRGNAM.xml -e $SRCNAM.xml; then
+		printf "Looks like a mimetype file. Editing doinst.sh.\n"
 cat << EOF >> $CWD/doinst.sh
 # Looks like a mimetype file.
 
@@ -258,280 +257,280 @@ if [ -x /usr/bin/update-mime-database ]; then
 fi
 
 EOF
-    fi
+	fi
 
-    if [ ! -r doinst.sh ]; then
-        sed -i '/cat $CWD\/doinst.sh/d' $PRGNAM.SlackBuild
-    fi
+	if [ ! -r doinst.sh ]; then
+		sed -i '/cat $CWD\/doinst.sh/d' $PRGNAM.SlackBuild
+	fi
 
-    if [ "$SOURCE_DIR" != "$PRGNAM-$VERSION" ] &&
-            [ "$BUILDTYPE" != "rubygem" ] &&
-            [ "$SOURCE_DIR" != "$SRCNAM-$VERSION" ]; then
-        printf $bred"Archive source output directory does not match "
-        printf "archive name.\n"
-        printf $bred"You will need to adjust the SlackBuild by hand "
-        printf "to account for this.\n"
-        printf $normal
-        unset _BUILD
-    fi
+	if [ "$SOURCE_DIR" != "$PRGNAM-$VERSION" ] &&
+		[ "$BUILDTYPE" != "rubygem" ] &&
+			[ "$SOURCE_DIR" != "$SRCNAM-$VERSION" ]; then
+		printf $bred"Archive source output directory does not match "
+		printf "archive name.\n"
+		printf $bred"You will need to adjust the SlackBuild by hand "
+		printf "to account for this.\n"
+		printf $normal
+		unset _BUILD
+	fi
 }
 
 # }}}
 # {{{ autotools/perl/python/gem/cmake functions
 
 autotools() {
-    if [ -n "$autogen" ]; then
-        printf "No configure file found.\nFound autogen.sh\n"
-        sed -i "/^CFLAGS=/i\./autogen.sh" $PRGNAM.SlackBuild
-    fi
+	if [ -n "$autogen" ]; then
+		printf "No configure file found.\nFound autogen.sh\n"
+		sed -i "/^CFLAGS=/i\./autogen.sh" $PRGNAM.SlackBuild
+	fi
 
-    if [ -n "$autoconf" ]; then
-        printf "No configure file or autogen.sh found.\n"
-        printf "Adding autoreconf -i --force\n"
-        sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
-    fi
-    common
+	if [ -n "$autoconf" ]; then
+		printf "No configure file or autogen.sh found.\n"
+		printf "Adding autoreconf -i --force\n"
+		sed -i '/^CFLAGS=/i\autoreconf -i --force' $PRGNAM.SlackBuild
+	fi
+	common
 }
 
 perl() {
-    makefile=$(echo "$TOPCONTENTS" | grep -i makefile.pl)
-    build=$(echo "$TOPCONTENTS" | grep -i build.pl)
+	makefile=$(echo "$TOPCONTENTS" | grep -i makefile.pl)
+	build=$(echo "$TOPCONTENTS" | grep -i build.pl)
 
-    if [ -n "$makefile" ]; then
-        sed -i "s/Makefile.PL/$makefile/" $PRGNAM.SlackBuild
-        sed -i '/perl Build.PL/,/^$/d' $PRGNAM.SlackBuild
-    elif [ -n "$build" ]; then
-        sed -i "s/Build.PL/$build/" $PRGNAM.SlackBuild
-        sed -i '/perl Makefile.PL/,/^$/d' $PRGNAM.SlackBuild
-    fi
-    common
+	if [ -n "$makefile" ]; then
+		sed -i "s/Makefile.PL/$makefile/" $PRGNAM.SlackBuild
+		sed -i '/perl Build.PL/,/^$/d' $PRGNAM.SlackBuild
+	elif [ -n "$build" ]; then
+		sed -i "s/Build.PL/$build/" $PRGNAM.SlackBuild
+		sed -i '/perl Makefile.PL/,/^$/d' $PRGNAM.SlackBuild
+	fi
+	common
 }
 
 python() {
-    common
+	common
 }
 
 cmake() {
-    common
+	common
 }
 
 rubygem() {
-    common
+	common
 }
 
 # }}}
 # {{{ discover template
 
 pick_template() {
-    printf "$SCRIPT: looking to see what sort of template to use...\n"
+	printf "$SCRIPT: looking to see what sort of template to use...\n"
 
-    if echo $TOPCONTENTS | grep -q CMakeLists.txt; then
-        printf "Looks like a cmake package.\n"
-        BUILDTYPE=cmake
-        PKG=$TMP/package-$PRGNAM
-    elif echo $TOPCONTENTS | grep -q setup.py; then
-        printf "Looks like a python package.\n"
-        SRCNAM=$PRGNAM
-        PRGNAM=python-$SRCNAM
-        PKG=$TMP/package-$PRGNAM
-        BUILDTYPE=python
-    elif echo $TOPCONTENTS | egrep -qi '(Makefile|Build).PL'; then
-        printf "Looks like a perl package.\n"
-        SRCNAM=$PRGNAM
-        PRGNAM=perl-$SRCNAM
-        PKG=$TMP/package-$PRGNAM
-        BUILDTYPE=perl
-    elif [[ $ARCHIVE == "gem" ]]; then
-        printf "Looks like a ruby package.\n"
-        SRCNAM=$PRGNAM
-        PRGNAM=rubygem-$SRCNAM
-        PKG=$TMP/package-$PRGNAM
-        BUILDTYPE=rubygem
-    else
-        printf "Looks like a standard autotools package.\n"
-        BUILDTYPE=autotools
-        PKG=$TMP/package-$PRGNAM
-        if ! echo "$TOPCONTENTS" | grep -q 'configure$'; then
-            if echo $TOPCONTENTS | grep -q 'autogen.sh'; then
-                autogen=YES
-            else
-                autoconf=YES
-            fi
-        fi
-    fi
+	if echo $TOPCONTENTS | grep -q CMakeLists.txt; then
+		printf "Looks like a cmake package.\n"
+		BUILDTYPE=cmake
+		PKG=$TMP/package-$PRGNAM
+	elif echo $TOPCONTENTS | grep -q setup.py; then
+		printf "Looks like a python package.\n"
+		SRCNAM=$PRGNAM
+		PRGNAM=python-$SRCNAM
+		PKG=$TMP/package-$PRGNAM
+		BUILDTYPE=python
+	elif echo $TOPCONTENTS | egrep -qi '(Makefile|Build).PL'; then
+		printf "Looks like a perl package.\n"
+		SRCNAM=$PRGNAM
+		PRGNAM=perl-$SRCNAM
+		PKG=$TMP/package-$PRGNAM
+		BUILDTYPE=perl
+	elif [[ $ARCHIVE == "gem" ]]; then
+		printf "Looks like a ruby package.\n"
+		SRCNAM=$PRGNAM
+		PRGNAM=rubygem-$SRCNAM
+		PKG=$TMP/package-$PRGNAM
+		BUILDTYPE=rubygem
+	else
+		printf "Looks like a standard autotools package.\n"
+		BUILDTYPE=autotools
+		PKG=$TMP/package-$PRGNAM
+		if ! echo "$TOPCONTENTS" | grep -q 'configure$'; then
+			if echo $TOPCONTENTS | grep -q 'autogen.sh'; then
+				autogen=YES
+			else
+				autoconf=YES
+			fi
+		fi
+	fi
 
-    printf "%-9s%s\n" "PRGNAM:" "$PRGNAM"
-    printf "%-9s%s\n" "VERSION:" "$VERSION"
-    printf "%-9s%s\n" "ARCH:" "$ARCH"
-    printf "%-9s%s\n" "BUILD:" "$BUILD"
-    printf "%-9s%s\n" "TAG:" "$TAG"
+	printf "%-9s%s\n" "PRGNAM:" "$PRGNAM"
+	printf "%-9s%s\n" "VERSION:" "$VERSION"
+	printf "%-9s%s\n" "ARCH:" "$ARCH"
+	printf "%-9s%s\n" "BUILD:" "$BUILD"
+	printf "%-9s%s\n" "TAG:" "$TAG"
 
-    TEMPLATE=$BUILDTYPE-template.SlackBuild
+	TEMPLATE=$BUILDTYPE-template.SlackBuild
 
-    backup $PRGNAM.SlackBuild
-    cat $TEMPLATES/$TEMPLATE > $PRGNAM.SlackBuild
-    chmod +x $PRGNAM.SlackBuild
+	backup $PRGNAM.SlackBuild
+	cat $TEMPLATES/$TEMPLATE > $PRGNAM.SlackBuild
+	chmod +x $PRGNAM.SlackBuild
 
-    $BUILDTYPE # function call to {autotools,cmake,perl,python,rubygem}
+	$BUILDTYPE # function call to {autotools,cmake,perl,python,rubygem}
 }
 
 # }}}
 # {{{ build errors
 
 fix_build_errors() {
-    if [ -d $PKG/usr/share/man ]; then
-        printf "Found man pages in $PKG/usr/share/man. Fixing.\n"
-        sed -i '/find $PKG.usr.man -type f/i\mv $PKG/usr/share/man $PKG/usr' \
-            $PRGNAM.SlackBuild
-    elif [ ! -d $PKG/usr/man ]; then
-        printf "No man directory found. Removing from SlackBuild.\n"
-        sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
-    fi
+	if [ -d $PKG/usr/share/man ]; then
+		printf "Found man pages in $PKG/usr/share/man. Fixing.\n"
+		sed -i '/find $PKG.usr.man -type f/i\mv $PKG/usr/share/man $PKG/usr' \
+			$PRGNAM.SlackBuild
+	elif [ ! -d $PKG/usr/man ]; then
+		printf "No man directory found. Removing from SlackBuild.\n"
+		sed -i '/find $PKG.usr.man -type f/,/^$/d' $PRGNAM.SlackBuild
+	fi
 
-    if [ -d $PKG/usr/share/info ]; then
-        printf "Found info pages in $PKG/usr/share/info. Fixing.\n"
-        sed -i '/rm -f $PKG.usr.info.dir/i\mv $PKG/usr/share/info $PKG/usr' \
-            $PRGNAM.SlackBuild
-    elif [ ! -d $PKG/usr/info ]; then
-        printf "No info directory found. Removing from SlackBuild.\n"
-        sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
-    fi
+	if [ -d $PKG/usr/share/info ]; then
+		printf "Found info pages in $PKG/usr/share/info. Fixing.\n"
+		sed -i '/rm -f $PKG.usr.info.dir/i\mv $PKG/usr/share/info $PKG/usr' \
+			$PRGNAM.SlackBuild
+	elif [ ! -d $PKG/usr/info ]; then
+		printf "No info directory found. Removing from SlackBuild.\n"
+		sed -i '/rm -f $PKG.usr.info.dir/,/^$/d' $PRGNAM.SlackBuild
+	fi
 
-    # Do this while we're here though it can't have actually caused a
-    # build error.
-    if [ -z "$(find $PKG -name perllocal.pod \
-            -o -name ".packlist" -o -name "*.bs" 2>/dev/null)" ]; then
-        printf "No perl cruft found. "
-        printf "Removing perl cruft line from SlackBuild.\n"
-        sed -i '/^find $PKG -name "perllocal.pod"/,/^$/d' $PRGNAM.SlackBuild
-    fi
+	# Do this while we're here though it can't have actually caused a
+	# build error.
+	if [ -z "$(find $PKG \
+			-name perllocal.pod -o -name ".packlist" -o -name "*.bs" \
+			2>/dev/null)" ]; then
+		printf "No perl cruft found. Removing perl cruft line from SlackBuild.\n"
+		sed -i '/^find $PKG -name "perllocal.pod"/,/^$/d' $PRGNAM.SlackBuild
+	fi
 }
 
 # }}}
 # {{{ build
 
 build() {
-    local ATTEMPTED_FIX=${ATTEMPTED_FIX:-1}
+	local ATTEMPTED_FIX=${ATTEMPTED_FIX:-1}
 
-    if [ "$(id -u)" -ne 0 ]; then
-        printf "You need to be root to run the SlackBuild\n" >&2
-        exit 1
-    fi
+	if [ "$(id -u)" -ne 0 ]; then
+		printf "You need to be root to run the SlackBuild\n" >&2
+		exit 1
+	fi
 
-    if [ "$ERRORACTION" = PROMPT ]; then
-        echo "Hit enter to continue."
-        read JUNK
-    fi
+	if [ "$ERRORACTION" = PROMPT ]; then
+		echo "Hit enter to continue."
+		read JUNK
+	fi
 
-    # I knew pipefail would do what I wanted but that it was a bashism and
-    # that a command list and storage of $? would be the answer but had
-    # trouble juggling the file descriptors, so I found and modified this from
-    # http://osdir.com/ml/libvir-list/2010-06/msg00095.html
+	# I knew pipefail would do what I wanted but that it was a bashism and
+	# that a command list and storage of $? would be the answer but had
+	# trouble juggling the file descriptors, so I found and modified this from
+	# http://osdir.com/ml/libvir-list/2010-06/msg00095.html
 
-    # set -o pipefail is a bashism; this use of exec is the POSIX alternative
-    exec 3>&1
-    rc=$(
-        exec 4>&1 >&3
-        { sh $PRGNAM.SlackBuild 2>&1; echo $? >&4; } |
-            tee -a $PKGTMP/mkslack-error.log
-    )
-    exec 3>&-
+	# set -o pipefail is a bashism; this use of exec is the POSIX alternative
+	exec 3>&1
+	rc=$(
+		exec 4>&1 >&3
+		{ sh $PRGNAM.SlackBuild 2>&1; echo $? >&4; } |
+			tee -a $PKGTMP/mkslack-error.log
+	)
+	exec 3>&-
 
-    if [ "$rc" -eq 1 ]; then
-        tail -n 1 $PKGTMP/mkslack-error.log |
-            egrep -q "/usr/(info|man).*No such file or directory"
-        ATTEMPT_FIX=$?
+	if [ "$rc" -eq 1 ]; then
+		tail -n 1 $PKGTMP/mkslack-error.log |
+			egrep -q "/usr/(info|man).*No such file or directory"
+		ATTEMPT_FIX=$?
 
-        if [ $ATTEMPT_FIX -eq 0 ] && [ $ATTEMPTED_FIX -ne 0 ]; then
-            if [ $ERRORACTION = PROMPT ]; then
-                printf "Do you want me to adjust the SlackBuild and retry "
-                printf "building it? [y/N]: "
-                read REPLY
+		if [ $ATTEMPT_FIX -eq 0 ] && [ $ATTEMPTED_FIX -ne 0 ]; then
+			if [ $ERRORACTION = PROMPT ]; then
+				printf "Do you want me to adjust the SlackBuild and retry "
+				printf "building it? [y/N]: "
+				read REPLY
                                 REPLY=$(echo $REPLY | tr A-Z a-z)
-            fi
-            if [ $ERRORACTION = AUTO ] || [ $REPLY = y ]; then
-                fix_build_errors
-                ATTEMPTED_FIX=0
-                build
-            else
-                exit 1
-            fi
-        else
-            printf "Unknown error.\n" >&2
-            exit 1
-        fi
-    fi
+			fi
+			if [ $ERRORACTION = AUTO ] || [ $REPLY = y ]; then
+				fix_build_errors
+				ATTEMPTED_FIX=0
+				build
+			else
+				exit 1
+			fi
+		else
+			printf "Unknown error.\n" >&2
+			exit 1
+		fi
+	fi
 
-    if [ -n "$INSTALL" ]; then
-        upgradepkg --reinstall --install-new \
-            $PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
-    fi
+	if [ -n "$INSTALL" ]; then
+		upgradepkg --reinstall --install-new \
+			$PKGTMP/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.t?z
+	fi
 }
 
 # }}}
 # {{{ create files
 
 make_files() {
-    backup $PRGNAM.info slack-desc
-    cat $TEMPLATES/template.info > $PRGNAM.info
-    cat $TEMPLATES/template-slack-desc > slack-desc
+	backup $PRGNAM.info slack-desc
+	cat $TEMPLATES/template.info > $PRGNAM.info
+	cat $TEMPLATES/template-slack-desc > slack-desc
 
-    blank=$(echo $PRGNAM | tr [:graph:] " ")
-    sed -i "
-        s%       |%$blank|%
-        s%appname%$PRGNAM%g
-        9s/$PRGNAM:/$PRGNAM: $PRGNAM ( ... )/
-        " slack-desc
-    sed -i "
-        s%@PRGNAM@%$PRGNAM%g
-        s%@VERSION@%$VERSION%g
-        s%@NAME@%$NAME%g
-        s%@EMAIL@%$EMAIL%g
-        " $PRGNAM.info
+	blank=$(echo $PRGNAM | tr [:graph:] " ")
+	sed -i "
+		s%       |%$blank|%
+		s%appname%$PRGNAM%g
+		9s/$PRGNAM:/$PRGNAM: $PRGNAM (  )/
+		" slack-desc
+	sed -i "
+		s%@PRGNAM@%$PRGNAM%g
+		s%@VERSION@%$VERSION%g
+		s%@NAME@%$NAME%g
+		s%@EMAIL@%$EMAIL%g
+		" $PRGNAM.info
 
-    MD5SUM=$(md5sum $SRCNAM-$VERSION.$ARCHIVE | cut -d' ' -f1)
-    printf "md5sum of archive:\t$MD5SUM\n"
+	MD5SUM=$(md5sum $SRCNAM-$VERSION.$ARCHIVE | cut -d' ' -f1)
+	printf "md5sum of archive:\t$MD5SUM\n"
 
-    sed -i "s%@md5sum@%$MD5SUM%;s%@md5sum64@%%" $PRGNAM.info
-    printf "Info and slack-desc generated.\n"
+	sed -i "s%@md5sum@%$MD5SUM%;s%@md5sum64@%%" $PRGNAM.info
+	printf "Info and slack-desc generated.\n"
 }
 
 # }}}
 # {{{ version, check version, backups
 
 version() {
-    printf "$SCRIPT $SCRIPTVERSION\n"
+	printf "$SCRIPT $SCRIPTVERSION\n"
 }
 
 check_version() {
-    CKVER_CMD="finger @dawoodfall.net"
+	CKVER_CMD="finger @dawoodfall.net"
 
-    printf "$SCRIPT: version $SCRIPTVERSION\n"
-    printf "$SCRIPT: checking for newer version by $CKVER_CMD ...\n"
-    latest=$($CKVER_CMD | awk '/mkslack/{print $2}')
-    if [ -z "$latest" ]; then
-        printf "Unable to verify latest version.\n" >&2
-        return 1
-    elif [ "$latest" != "$SCRIPTVERSION" ]; then
-        printf "Newer version available: $latest\n"
-    elif [ "$latest" = "$SCRIPTVERSION" ]; then
-        printf "No newer version available.\n"
-    fi
+	printf "$SCRIPT: version $SCRIPTVERSION\n"
+	printf "$SCRIPT: checking for newer version by $CKVER_CMD ...\n"
+	latest=$($CKVER_CMD | awk '/mkslack/{print $2}')
+	if [ -z "$latest" ]; then
+		printf "Unable to verify latest version.\n" >&2
+		return 1
+	elif [ "$latest" != "$SCRIPTVERSION" ]; then
+		printf "Newer version available: $latest\n"
+	elif [ "$latest" = "$SCRIPTVERSION" ]; then
+		printf "No newer version available.\n"
+	fi
 }
 
 backup() {
-    if [ "$KEEPBACKUPS" = "YES" ]; then
-        for FILE in "$@"; do
-            for n in $(seq 4 -1 1); do
-                if [ -r $FILE.$n ]; then
-                    mv -f $FILE.$n $FILE.$(($n+1))
-                fi
-            done
-            if [ -r $FILE ]; then
-                mv -f $FILE $FILE.1
-            fi
-        done
-    fi
+	if [ "$KEEPBACKUPS" = "YES" ]; then
+		for FILE in "$@"; do
+			for n in $(seq 4 -1 1); do
+				if [ -r $FILE.$n ]; then
+					mv -f $FILE.$n $FILE.$(($n+1))
+				fi
+			done
+			if [ -r $FILE ]; then
+				mv -f $FILE $FILE.1
+			fi
+		done
+	fi
 }
 
 # }}}
@@ -539,23 +538,23 @@ backup() {
 # {{{ Main ===================================================================
 
 if [ -r $CONFIG ]; then
-    . $CONFIG
-    validate_cfg || exit 1
+	. $CONFIG
+	validate_cfg || exit 1
 else
-    printf "$SCRIPT: config file not found or not readable." >&2
-    exit 1
+	printf "$SCRIPT: config file not found or not readable." >&2
+	exit 1
 fi
 
 until [ -z "$1" ]; do
-    case "$1" in
-        -b|--build) _BUILD=1 ;;
-        -h|--help) usage; exit ;;
-        -i|--install) INSTALL=1 ;;
-        -V|--ckver) check_version; exit ;;
-        -v|--version) version; exit ;;
-        *) FILENAME="$1" ;;
-    esac
-    shift
+	case "$1" in
+		-b|--build) _BUILD=1 ;;
+		-h|--help) usage; exit ;;
+		-i|--install) INSTALL=1 ;;
+		-V|--ckver) check_version; exit ;;
+		-v|--version) version; exit ;;
+		*) FILENAME="$1" ;;
+	esac
+	shift
 done
 
 parse_archive || exit 1
@@ -563,7 +562,7 @@ pick_template
 make_files
 
 if [ -n "$_BUILD" ] || [ -n "$INSTALL" ]; then
-    build
+	build
 fi
 
 # }}}

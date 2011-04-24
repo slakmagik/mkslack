@@ -39,29 +39,27 @@ unnecessary parts or add anything missing!
 .SH OPTIONS
 .\"---------------------------------------------------------------------
 .TP
-.BR \-h ", " \-\-help
+.BR -h ", " --help
 Print the usage message to standard output.
 .\"---------------------------------------------------------------------
 .TP
-.BR \-b ", " \-\-build
+.BR -b ", " --build
 Run the SlackBuild after creation.
 Got root?
 .\"---------------------------------------------------------------------
 .TP
-.BR \-i ", " \-\-install
+.BR -i ", " --install
 Install the package after running
 .BR mkslack .
-(Implies
-.BR \-b .)
 .\"---------------------------------------------------------------------
 .TP
-.BR \-v ", " \-\-version
+.BR -v ", " --version
 Print the version of
 .B mkslack
 to standard output.
 .\"---------------------------------------------------------------------
 .TP
-.BR \-V ", " \-\-ckver
+.BR -V ", " --ckver
 Check for a new version of
 .BR mkslack .
 (Requires
@@ -94,20 +92,13 @@ If set to ``AUTO'' or set to ``PROMPT'' and answering ``y'' to the
 resulting prompt,
 .B mkslack
 will adjust the SlackBuild to try to move the man and/or info pages from
-.I /usr/share/{man,info}
+.I /usr/share/man
 to
-.I /usr/{man,info}
+.I /usr/man
 and will rebuild.
 If set to ``EXIT'' or set to ``PROMPT'' and answering ``n'',
 .B mkslack
 will exit.
-It is also used to determine if
-.B mkslack
-should prompt the user to continue after producing output for the user
-to read.
-If set to ``AUTO'' or ``EXIT'',
-.B mkslack
-will not pause after output.
 It defaults to ``PROMPT''.
 .\"---------------------------------------------------------------------
 .SS Command Line Variables
@@ -149,21 +140,11 @@ If it is not set, it defaults to 1.
 can be manually assigned.
 It defaults to the auto-detected value of the architecture
 .B mkslack
-is running under, which is detected with
-.BR uname (1).
+is running under.
 .PP
 .B TAG
 can also be used to assign any value desired.
 It defaults to ``_SBo''.
-.\"=====================================================================
-.SH FILES
-.TP
-.I /etc/mkslack/mkslack.conf
-Main configuration file.
-.TP
-.I /usr/share/mkslack/templates/*
-Template files used to generate the SlackBuilds for the various build
-systems.
 .\"=====================================================================
 .SH AUTHORS
 David Woodfall and slakmagik
@@ -171,9 +152,4 @@ David Woodfall and slakmagik
 .SH BUGS
 Maybe.
 Please send bug reports to dave@dawoodfall.net
-.\"=====================================================================
-.SH SEE ALSO
-.BR finger (1),
-.BR uname (1),
-.BR upgradepkg (8)
 .\" vim:set tw=72:

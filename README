@@ -1,0 +1,95 @@
+mkslack - a SlackBuild generator script
+Copyright 2010-11 David Woodfall, slakmagik
+mkslack is licensed under a "one-clause BSD/Slackware" license.
+See the script for the full text.
+Homepage: http://www.dawoodfall.net/slackbuilds/noversion/mkslack/
+
+NAME
+       mkslack - a SlackBuild generator
+
+SYNOPSIS
+       mkslack [options] archive
+
+DESCRIPTION
+       Mkslack is a slackbuild generator which uses templates stored in /usr/
+       share/mkslack/templates and a configuration file, /etc/mkslack/
+       mkslack.conf, which you must edit to use your name, email, etc.
+
+   Idea for use:
+       Create a directory, download the archive of a package into it, and run
+       mkslack on it. The initial slackbuild and info file are built by this
+       script and, when a test build/install is done and working, the files
+       should be tweaked by hand. Especially don't forget to fill in the rest
+       of the details in the info file. One thing to point out is that
+       mkslack will overwrite these files if run again unless you keep the
+       default ``KEEPBACKUPS="YES"'' in the configuration file.
+
+       This is only a starter kit!  You ARE expected to edit the created files
+       by hand afterwards to remove unnecessary parts or add anything missing!
+
+OPTIONS
+       -h, --help
+              Print the usage message to standard output.
+
+       -b, --build
+              Run the SlackBuild after creation. Got root?
+
+       -i, --install
+              Install the package after running mkslack.
+
+       -v, --version
+              Print the version of mkslack to standard output.
+
+       -V, --ckver
+              Check for a new version of mkslack. (Requires finger(1) and
+              internet access.)
+
+   Configuration File Variables
+       NAME and EMAIL should be set to what should appear in the SlackBuild
+       and info files. They default to empty strings and must be set to non-
+       empty strings.
+
+       TAG  should  be  set  to  your  custom  tag  (if  any).  It defaults to
+       ``_SBo''.
+
+       KEEPBACKUPS may be set to ``YES'' or ``NO''.  If set to ``YES'', up  to
+       5 backups of SlackBuilds and other files will be kept. The higher the
+       number, the older they are. It defaults to ``YES''.
+
+       ERRORACTION specifies what to do on build errors caused  by  non-Slack-
+       ware-standard man or info pages and may be set to ``PROMPT'', ``AUTO'',
+       or ``EXIT''. If set to ``AUTO'' or set to ``PROMPT'' and answering
+       ``y'' to the resulting prompt, mkslack will adjust the SlackBuild to
+       try to move the man and/or info pages from /usr/share/man to /usr/man
+       and will rebuild. If set to ``EXIT'' or set to ``PROMPT'' and answer-
+       ing ``n'', mkslack will exit. It defaults to ``PROMPT''.
+
+   Command Line Variables
+       DOCS, BUILD, ARCH, and TAG can all be adjusted at runtime by prefixing
+       an assignment to one or more of these variables on mkslack's command
+       line.
+
+       DOCS can adjust the list of documents in the top level  of  the  source
+       tree. For example:
+
+              DOCS=SomeFile mkslack archive
+
+       This  will  add  ``SomeFile''  to  the  list.  For the default, see the
+       assignment in mkslack, itself. Depending on mkslack's location and
+       your privileges, you may also edit the DOCS list there. Any docs that
+       aren't found will be removed from the list.
+
+       BUILD can be used to increment the build number.  If it is not set,  it
+       defaults to 1.
+
+       ARCH  can be manually assigned.  It defaults to the auto-detected value
+       of the architecture mkslack is running under.
+
+       TAG can also be used to assign  any  value  desired.   It  defaults  to
+       ``_SBo''.
+
+AUTHORS
+       David Woodfall and slakmagik
+
+BUGS
+       Maybe. Please send bug reports to dave@dawoodfall.net
