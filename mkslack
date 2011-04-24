@@ -29,7 +29,7 @@
 # {{{ Global variables =======================================================
 
 SCRIPT=${0##*/}
-SCRIPTVERSION=3.8
+SCRIPTVERSION=3.9
 if [ -z "$ARCH" ]; then
     ARCH=$(uname -m)
     case $ARCH in
@@ -228,6 +228,9 @@ common() {
     printf "SlackBuild generated.\n"
 
     backup doinst.sh
+    # if KEEPBACKUPS isn't set and a desktop file isn't found, but a mimetype
+    # file is, we'll get duplications if we don't start with a clean slate
+    rm -f doinst.sh
 
     if echo $FULLCONTENTS | grep -qie $PRGNAM.desktop -e $SRCNAM.desktop; then
         printf "Desktop file found. Editing doinst.sh.\n"
@@ -480,7 +483,7 @@ make_files() {
     sed -i "
         s%       |%$blank|%
         s%appname%$PRGNAM%g
-        9s/$PRGNAM:/$PRGNAM: $PRGNAM ( ... )/
+        9s/$PRGNAM:/$PRGNAM: $PRGNAM ()/
         " slack-desc
     sed -i "
         s%@PRGNAM@%$PRGNAM%g

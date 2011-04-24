@@ -1,5 +1,5 @@
 DATE
-Version X.X
+Version 3.9
 - Revised documentation.
 - '-h' prints flags in case-folded alphabetical order.
 - If config file variables are missing, the list is printed to
@@ -16,6 +16,10 @@ Version X.X
   to the MD5SUM_x86_64 .info field or not at all rather than
   to the MD5SUM field. If MD5SUM_x86_64 is actually required,
   this will need to be manually moved to that field.
+- Removed '...' placeholder in generated slack-desc (no-space
+  variant of dive's 4.0)
+- Fixed problem with doinst.sh not being re-initialized in
+  some cases (commented variant of dive's 4.0)
 +--------------------------+
 Tue 08 Feb 2011 22:29:23 GMT
 Version 3.8
